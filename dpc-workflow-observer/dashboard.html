@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>DPC Workflow Observer — Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      background: #f0f4f1;
+      color: #212529;
+      min-height: 100vh;
+    }
+
+    /* ---- Layout ---- */
+    header {
+      background: #1a6b4a;
+      color: #fff;
+      padding: 16px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    header h1 { font-size: 16px; font-weight: 600; }
+
+    .header-controls { display: flex; align-items: center; gap: 12px; }
+
+    #date-picker {
+      border: 1px solid rgba(255,255,255,0.3);
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    #date-picker::-webkit-calendar-picker-indicator { filter: invert(1); }
+
+    .btn {
+      padding: 5px 14px;
+      border-radius: 4px;
+      font-size: 13px;
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.4);
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+    }
+
+    .btn:hover { background: rgba(255,255,255,0.25); }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 20px;
+    }
+
+    /* ---- Summary bar ---- */
+    .summary-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .summary-card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 14px 20px;
+      flex: 1;
+      min-width: 130px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+      border-top: 3px solid #1a6b4a;
+    }
+
+    .summary-card .num {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1a6b4a;
+      line-height: 1;
+    }
+
+    .summary-card .lbl {
+      font-size: 11px;
+      color: #6c757d;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-top: 4px;
+    }
+
+    /* ---- View tabs ---- */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #dee2e6;
+    }
+
+    .view-tab {
+      padding: 8px 18px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #6c757d;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .view-tab.active {
+      color: #1a6b4a;
+      border-bottom-color: #1a6b4a;
+      font-weight: 600;
+    }
+
+    .view-tab:hover:not(.active) { color: #343a40; }
+
+    /* ---- Patient cards ---- */
+    .patient-section { margin-bottom: 20px; }
+
+    .patient-header {
+      background: #fff;
+      border-radius: 8px 8px 0 0;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-left: 4px solid #1a6b4a;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+    }
+
+    .patient-name {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .patient-meta {
+      font-size: 12px;
+      color: #6c757d;
+      display: flex;
+      gap: 12px;
+    }
+
+    .tool-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+
+    .chip {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 500;
+    }
+
+    .chip-chart        { background: #d1fae5; color: #065f46; }
+    .chip-communication{ background: #dbeafe; color: #1e40af; }
+    .chip-labs         { background: #fef3c7; color: #92400e; }
+    .chip-imaging      { background: #ede9fe; color: #4c1d95; }
+    .chip-fax          { background: #fee2e2; color: #991b1b; }
+    .chip-scheduling   { background: #f0fdf4; color: #15803d; }
+    .chip-prescriptions{ background: #fdf4ff; color: #7e22ce; }
+    .chip-reference    { background: #f1f5f9; color: #334155; }
+    .chip-storage      { background: #f1f5f9; color: #334155; }
+    .chip-unknown      { background: #f1f5f9; color: #6c757d; }
+
+    /* ---- Timeline entries ---- */
+    .entries {
+      background: #fff;
+      border-radius: 0 0 8px 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+    }
+
+    .entry {
+      display: flex;
+      align-items: flex-start;
+      padding: 10px 18px;
+      border-top: 1px solid #f1f5f9;
+      gap: 12px;
+    }
+
+    .entry:hover { background: #f8fffe; }
+
+    .entry-time {
+      font-size: 11px;
+      color: #6c757d;
+      white-space: nowrap;
+      min-width: 48px;
+      margin-top: 2px;
+    }
+
+    .entry-tool {
+      min-width: 110px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .entry-title {
+      flex: 1;
+      font-size: 12px;
+      color: #495057;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .entry-duration {
+      font-size: 11px;
+      color: #adb5bd;
+      white-space: nowrap;
+    }
+
+    .entry-note-btn {
+      font-size: 11px;
+      color: #1a6b4a;
+      cursor: pointer;
+      white-space: nowrap;
+      background: none;
+      border: none;
+      padding: 0;
+    }
+
+    .entry-note-btn:hover { text-decoration: underline; }
+
+    .entry-note {
+      font-size: 12px;
+      color: #6c757d;
+      font-style: italic;
+      margin-top: 2px;
+    }
+
+    /* ---- Timeline view ---- */
+    .timeline-entry {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 10px 0;
+      position: relative;
+    }
+
+    .tl-time {
+      min-width: 56px;
+      font-size: 12px;
+      color: #6c757d;
+      text-align: right;
+      padding-top: 2px;
+    }
+
+    .tl-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #1a6b4a;
+      margin-top: 4px;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .tl-line {
+      position: absolute;
+      left: 70px;
+      top: 16px;
+      bottom: -10px;
+      width: 2px;
+      background: #e9ecef;
+    }
+
+    .tl-content {
+      flex: 1;
+      background: #fff;
+      border-radius: 6px;
+      padding: 8px 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+
+    .tl-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .tl-tool { font-size: 13px; font-weight: 600; }
+
+    .tl-patient {
+      font-size: 12px;
+      color: #1a6b4a;
+      font-weight: 500;
+    }
+
+    .tl-title {
+      font-size: 12px;
+      color: #6c757d;
+      margin-top: 2px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .tl-duration {
+      font-size: 11px;
+      color: #adb5bd;
+      white-space: nowrap;
+    }
+
+    /* ---- Unassigned ---- */
+    .unassigned-section {
+      background: #fff;
+      border-radius: 8px;
+      padding: 16px 18px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+      margin-bottom: 20px;
+      border-left: 4px solid #adb5bd;
+    }
+
+    .unassigned-section h3 {
+      font-size: 13px;
+      color: #6c757d;
+      margin-bottom: 10px;
+    }
+
+    /* ---- Note editing ---- */
+    .note-row {
+      background: #f8fffe;
+      padding: 8px 18px;
+      border-top: 1px solid #e8f5ee;
+    }
+
+    .note-row textarea {
+      width: 100%;
+      border: 1px solid #c3e6d4;
+      border-radius: 4px;
+      padding: 6px 8px;
+      font-size: 12px;
+      resize: vertical;
+      min-height: 48px;
+      font-family: inherit;
+      color: #212529;
+    }
+
+    .note-row textarea:focus { outline: none; border-color: #1a6b4a; }
+
+    .note-row .note-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+      justify-content: flex-end;
+    }
+
+    .note-save {
+      background: #1a6b4a;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 12px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .note-cancel {
+      background: #f1f5f9;
+      color: #495057;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      padding: 4px 12px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    /* ---- Empty state ---- */
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: #6c757d;
+    }
+
+    .empty h2 { font-size: 18px; margin-bottom: 8px; color: #343a40; }
+    .empty p  { font-size: 14px; max-width: 380px; margin: 0 auto; }
+
+    /* ---- Utilities ---- */
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>DPC Workflow Observer</h1>
+  <div class="header-controls">
+    <input type="date" id="date-picker" />
+    <button class="btn" id="btn-export">Export CSV</button>
+  </div>
+</header>
+
+<main>
+  <div class="summary-bar">
+    <div class="summary-card"><div class="num" id="s-events">0</div><div class="lbl">Activity events</div></div>
+    <div class="summary-card"><div class="num" id="s-patients">0</div><div class="lbl">Patients touched</div></div>
+    <div class="summary-card"><div class="num" id="s-tools">0</div><div class="lbl">Tools used</div></div>
+    <div class="summary-card"><div class="num" id="s-time">0m</div><div class="lbl">Tracked time</div></div>
+  </div>
+
+  <div class="view-tabs">
+    <div class="view-tab active" data-view="patient">By Patient</div>
+    <div class="view-tab" data-view="timeline">Timeline</div>
+  </div>
+
+  <div id="view-patient"></div>
+  <div id="view-timeline" class="hidden"></div>
+</main>
+
+<script src="dashboard.js"></script>
+</body>
+</html>

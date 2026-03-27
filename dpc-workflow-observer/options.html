@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>DPC Workflow Observer — Settings</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      background: #f0f4f1;
+      color: #212529;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #1a6b4a;
+      color: #fff;
+      padding: 16px 28px;
+    }
+
+    header h1 { font-size: 16px; font-weight: 600; }
+    header p  { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+
+    main {
+      max-width: 720px;
+      margin: 28px auto;
+      padding: 0 20px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+      margin-bottom: 20px;
+    }
+
+    .card h2 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .card .subtitle {
+      font-size: 12px;
+      color: #6c757d;
+      margin-bottom: 16px;
+    }
+
+    /* Tool list */
+    #tool-list { width: 100%; border-collapse: collapse; }
+
+    #tool-list th {
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #6c757d;
+      padding: 6px 8px;
+      border-bottom: 1px solid #dee2e6;
+    }
+
+    #tool-list td {
+      padding: 8px;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle;
+    }
+
+    #tool-list input[type="text"] {
+      width: 100%;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 13px;
+      font-family: monospace;
+      color: #212529;
+    }
+
+    #tool-list input[type="text"]:focus {
+      outline: none;
+      border-color: #1a6b4a;
+      box-shadow: 0 0 0 2px rgba(26,107,74,0.15);
+    }
+
+    #tool-list select {
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      padding: 4px 6px;
+      font-size: 12px;
+      color: #212529;
+      background: #fff;
+    }
+
+    #tool-list select:focus {
+      outline: none;
+      border-color: #1a6b4a;
+    }
+
+    .del-btn {
+      background: none;
+      border: none;
+      color: #dc3545;
+      cursor: pointer;
+      font-size: 16px;
+      padding: 0 4px;
+      line-height: 1;
+    }
+
+    .del-btn:hover { color: #a71d2a; }
+
+    /* Buttons */
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .btn {
+      padding: 7px 18px;
+      border-radius: 5px;
+      font-size: 13px;
+      cursor: pointer;
+      border: 1px solid #dee2e6;
+      background: #fff;
+      color: #495057;
+      transition: background 0.15s;
+    }
+
+    .btn:hover { background: #f1f3f5; }
+
+    .btn-primary {
+      background: #1a6b4a;
+      color: #fff;
+      border-color: #1a6b4a;
+    }
+
+    .btn-primary:hover { background: #155c3e; }
+
+    .btn-sm {
+      padding: 4px 12px;
+      font-size: 12px;
+    }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #1a6b4a;
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-size: 13px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    #toast.show { opacity: 1; }
+
+    /* Danger zone */
+    .danger-card {
+      border: 1px solid #fee2e2;
+      background: #fff;
+    }
+
+    .danger-card h2 { color: #dc3545; }
+
+    .btn-danger {
+      background: #dc3545;
+      color: #fff;
+      border-color: #dc3545;
+    }
+
+    .btn-danger:hover { background: #bb2d3b; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>DPC Workflow Observer — Settings</h1>
+  <p>Configure which tools to recognize and how patient names are detected.</p>
+</header>
+
+<main>
+
+  <!-- Tool recognition -->
+  <div class="card">
+    <h2>Recognized tools</h2>
+    <div class="subtitle">
+      The extension matches tab URLs against these patterns. Add your exact CPL/Envision portal URLs here.
+    </div>
+
+    <table id="tool-list">
+      <thead>
+        <tr>
+          <th style="width:40%">URL pattern (hostname + path prefix)</th>
+          <th style="width:25%">Display name</th>
+          <th style="width:22%">Category</th>
+          <th style="width:8%"></th>
+        </tr>
+      </thead>
+      <tbody id="tool-body">
+        <!-- Rows injected by JS -->
+      </tbody>
+    </table>
+
+    <div class="btn-row">
+      <button class="btn btn-sm" id="btn-add-tool">+ Add tool</button>
+    </div>
+  </div>
+
+  <!-- Patient name pattern -->
+  <div class="card">
+    <h2>Patient name detection</h2>
+    <div class="subtitle">
+      Regex used to extract a patient name from a tab title. Default matches "LastName.FirstName" format.
+      Capture group 1 is used as the name.
+    </div>
+    <input
+      type="text"
+      id="patient-regex"
+      style="width:100%; font-family:monospace; border:1px solid #dee2e6; border-radius:4px; padding:7px 10px; font-size:13px;"
+      placeholder="\b([A-Z][a-zA-Z'-]+\.[A-Z][a-zA-Z'-]+)\b"
+    />
+    <div style="font-size:11px; color:#6c757d; margin-top:6px;">
+      Test it: open a patient's Google Doc and check the popup to see if the name is detected.
+    </div>
+  </div>
+
+  <!-- Save -->
+  <div class="btn-row">
+    <button class="btn btn-primary" id="btn-save">Save settings</button>
+    <button class="btn" id="btn-reset">Reset to defaults</button>
+  </div>
+
+  <!-- Danger zone -->
+  <div class="card danger-card" style="margin-top:32px;">
+    <h2>Danger zone</h2>
+    <div class="subtitle">Permanently delete all recorded activity data from this device.</div>
+    <button class="btn btn-danger" id="btn-clear">Clear all activity data</button>
+  </div>
+
+</main>
+
+<div id="toast">Settings saved.</div>
+
+<script src="options.js"></script>
+</body>
+</html>

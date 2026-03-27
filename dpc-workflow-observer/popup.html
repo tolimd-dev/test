@@ -11,8 +11,7 @@
       font-size: 13px;
       background: #f8f9fa;
       color: #212529;
-      width: 300px;
-      min-height: 120px;
+      width: 280px;
     }
 
     header {
@@ -24,145 +23,89 @@
       justify-content: space-between;
     }
 
-    header h1 { font-size: 13px; font-weight: 600; letter-spacing: 0.3px; }
+    header h1 { font-size: 13px; font-weight: 600; }
 
-    .dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: #4ade80;
-      animation: pulse 2s infinite;
-    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: 0.4; }
-    }
+    .section { padding: 9px 14px; border-bottom: 1px solid #e9ecef; }
+    .label   { font-size: 10px; text-transform: uppercase; letter-spacing: .7px; color: #6c757d; margin-bottom: 3px; }
+    .value   { font-size: 13px; font-weight: 500; }
+    .muted   { color: #adb5bd; font-weight: 400; font-style: italic; }
+    .badge   { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; background: #e8f5ee; color: #1a6b4a; }
 
-    .section {
+    /* Suggestions banner */
+    .suggestions-banner {
       padding: 10px 14px;
-      border-bottom: 1px solid #e9ecef;
-    }
-
-    .label {
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: #6c757d;
-      margin-bottom: 4px;
-    }
-
-    .value {
-      font-size: 13px;
-      font-weight: 500;
-      color: #212529;
-    }
-
-    .value.muted { color: #adb5bd; font-weight: 400; font-style: italic; }
-
-    .badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 10px;
-      font-size: 11px;
-      font-weight: 600;
-      background: #e8f5ee;
-      color: #1a6b4a;
-    }
-
-    .stats {
+      background: #f0fdf4;
+      border-bottom: 1px solid #bbf7d0;
       display: flex;
-      gap: 0;
-    }
-
-    .stat {
-      flex: 1;
-      padding: 10px 14px;
-      border-right: 1px solid #e9ecef;
-      text-align: center;
-    }
-
-    .stat:last-child { border-right: none; }
-
-    .stat-num {
-      font-size: 22px;
-      font-weight: 700;
-      color: #1a6b4a;
-      line-height: 1;
-    }
-
-    .stat-label {
-      font-size: 10px;
-      color: #6c757d;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-top: 3px;
-    }
-
-    footer {
-      padding: 8px 14px;
-      display: flex;
+      align-items: center;
       gap: 8px;
-    }
-
-    button {
-      flex: 1;
-      padding: 6px 10px;
-      border: 1px solid #dee2e6;
-      border-radius: 4px;
-      background: #fff;
-      color: #495057;
-      font-size: 12px;
       cursor: pointer;
-      transition: background 0.15s;
     }
 
+    .suggestions-banner:hover { background: #dcfce7; }
+
+    .sug-icon { font-size: 18px; }
+
+    .sug-text { flex: 1; }
+    .sug-title { font-size: 12px; font-weight: 700; color: #15803d; }
+    .sug-sub   { font-size: 11px; color: #4ade80; color: #166534; opacity: 0.75; margin-top: 1px; }
+
+    .sug-arrow { color: #15803d; font-size: 14px; }
+
+    .stats { display: flex; }
+    .stat  { flex: 1; padding: 9px 14px; text-align: center; border-right: 1px solid #e9ecef; }
+    .stat:last-child { border-right: none; }
+    .stat-num { font-size: 20px; font-weight: 700; color: #1a6b4a; line-height: 1; }
+    .stat-lbl { font-size: 10px; color: #6c757d; text-transform: uppercase; letter-spacing: .4px; margin-top: 2px; }
+
+    footer { padding: 8px 14px; display: flex; gap: 8px; }
+    button { flex: 1; padding: 6px 10px; border: 1px solid #dee2e6; border-radius: 4px; background: #fff; color: #495057; font-size: 12px; cursor: pointer; }
     button:hover { background: #f1f3f5; }
-
-    button.primary {
-      background: #1a6b4a;
-      color: #fff;
-      border-color: #1a6b4a;
-    }
-
+    button.primary { background: #1a6b4a; color: #fff; border-color: #1a6b4a; }
     button.primary:hover { background: #155c3e; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>DPC Workflow Observer</h1>
-    <div class="dot" id="dot"></div>
-  </header>
 
-  <div class="section">
-    <div class="label">Currently tracking</div>
-    <div class="value" id="current-tool"><span class="muted">No recognized tool active</span></div>
+<header>
+  <h1>DPC Workflow Observer</h1>
+  <div class="dot"></div>
+</header>
+
+<!-- Suggestions banner (hidden until suggestions exist) -->
+<div class="suggestions-banner hidden" id="sug-banner">
+  <div class="sug-icon">💡</div>
+  <div class="sug-text">
+    <div class="sug-title" id="sug-title">New automations available</div>
+    <div class="sug-sub" id="sug-sub">Click to review and build</div>
   </div>
+  <div class="sug-arrow">›</div>
+</div>
 
-  <div class="section">
-    <div class="label">Patient context</div>
-    <div class="value" id="current-patient"><span class="muted">None detected</span></div>
-  </div>
+<div class="section">
+  <div class="label">Currently tracking</div>
+  <div class="value" id="current-tool"><span class="muted">No recognized tool active</span></div>
+</div>
 
-  <div class="stats">
-    <div class="stat">
-      <div class="stat-num" id="stat-events">—</div>
-      <div class="stat-label">Events today</div>
-    </div>
-    <div class="stat">
-      <div class="stat-num" id="stat-patients">—</div>
-      <div class="stat-label">Patients</div>
-    </div>
-    <div class="stat">
-      <div class="stat-num" id="stat-tools">—</div>
-      <div class="stat-label">Tools used</div>
-    </div>
-  </div>
+<div class="section">
+  <div class="label">Patient context</div>
+  <div class="value" id="current-patient"><span class="muted">None detected</span></div>
+</div>
 
-  <footer>
-    <button class="primary" id="btn-dashboard">View Dashboard</button>
-    <button id="btn-options">Settings</button>
-  </footer>
+<div class="stats">
+  <div class="stat"><div class="stat-num" id="s-events">—</div><div class="stat-lbl">Events</div></div>
+  <div class="stat"><div class="stat-num" id="s-patients">—</div><div class="stat-lbl">Patients</div></div>
+  <div class="stat"><div class="stat-num" id="s-tools">—</div><div class="stat-lbl">Tools</div></div>
+</div>
 
-  <script src="popup.js"></script>
+<footer>
+  <button class="primary" id="btn-dash">Open dashboard</button>
+  <button id="btn-opts">Settings</button>
+</footer>
+
+<script src="popup.js"></script>
 </body>
 </html>

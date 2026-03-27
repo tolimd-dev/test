@@ -5,149 +5,138 @@
   <title>DPC Workflow Observer — Settings</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; background: #f0f4f1; color: #212529; min-height: 100vh; }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      font-size: 14px;
-      background: #f0f4f1;
-      color: #212529;
-      min-height: 100vh;
-    }
-
-    header {
-      background: #1a6b4a;
-      color: #fff;
-      padding: 16px 28px;
-    }
-
+    header { background: #1a6b4a; color: #fff; padding: 16px 28px; }
     header h1 { font-size: 16px; font-weight: 600; }
-    header p  { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+    header p  { font-size: 12px; opacity: 0.75; margin-top: 3px; }
 
-    main {
-      max-width: 720px;
-      margin: 28px auto;
-      padding: 0 20px;
+    main { max-width: 720px; margin: 28px auto; padding: 0 20px; }
+
+    .card { background: #fff; border-radius: 8px; padding: 22px 26px; box-shadow: 0 1px 3px rgba(0,0,0,0.07); margin-bottom: 20px; }
+    .card h2 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .card .sub { font-size: 12px; color: #64748b; margin-bottom: 16px; line-height: 1.5; }
+
+    label { display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 5px; }
+
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      border: 1px solid #d1d5db;
+      border-radius: 5px;
+      padding: 8px 10px;
+      font-size: 13px;
+      color: #111827;
+      font-family: monospace;
     }
 
-    .card {
-      background: #fff;
-      border-radius: 8px;
-      padding: 20px 24px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
-      margin-bottom: 20px;
+    input:focus { outline: none; border-color: #1a6b4a; box-shadow: 0 0 0 2px rgba(26,107,74,0.15); }
+
+    .key-row { position: relative; }
+    .key-row input { padding-right: 70px; }
+    .toggle-vis {
+      position: absolute;
+      right: 10px; top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      font-size: 11px;
+      color: #6b7280;
+      cursor: pointer;
+      padding: 2px 6px;
     }
 
-    .card h2 {
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-
-    .card .subtitle {
+    .key-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
       font-size: 12px;
-      color: #6c757d;
-      margin-bottom: 16px;
+      color: #64748b;
     }
 
-    /* Tool list */
-    #tool-list { width: 100%; border-collapse: collapse; }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #d1d5db;
+    }
 
-    #tool-list th {
+    .status-dot.valid   { background: #22c55e; }
+    .status-dot.invalid { background: #ef4444; }
+
+    .test-key-btn {
+      margin-left: auto;
+      padding: 3px 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      background: #fff;
+      font-size: 11px;
+      color: #374151;
+      cursor: pointer;
+    }
+
+    .test-key-btn:hover { background: #f9fafb; }
+
+    .api-note {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 10px;
+      line-height: 1.5;
+    }
+
+    /* Tool table */
+    table { width: 100%; border-collapse: collapse; }
+    th {
       text-align: left;
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.6px;
-      color: #6c757d;
+      color: #6b7280;
       padding: 6px 8px;
-      border-bottom: 1px solid #dee2e6;
+      border-bottom: 1px solid #e5e7eb;
     }
 
-    #tool-list td {
-      padding: 8px;
-      border-bottom: 1px solid #f1f5f9;
-      vertical-align: middle;
-    }
+    td { padding: 7px 8px; border-bottom: 1px solid #f9fafb; vertical-align: middle; }
 
-    #tool-list input[type="text"] {
-      width: 100%;
-      border: 1px solid #dee2e6;
-      border-radius: 4px;
-      padding: 4px 8px;
-      font-size: 13px;
-      font-family: monospace;
-      color: #212529;
-    }
+    td input[type="text"] { font-size: 12px; padding: 4px 7px; }
 
-    #tool-list input[type="text"]:focus {
-      outline: none;
-      border-color: #1a6b4a;
-      box-shadow: 0 0 0 2px rgba(26,107,74,0.15);
-    }
-
-    #tool-list select {
-      border: 1px solid #dee2e6;
+    select {
+      border: 1px solid #d1d5db;
       border-radius: 4px;
       padding: 4px 6px;
       font-size: 12px;
-      color: #212529;
+      color: #111827;
       background: #fff;
     }
 
-    #tool-list select:focus {
-      outline: none;
-      border-color: #1a6b4a;
-    }
+    select:focus { outline: none; border-color: #1a6b4a; }
 
-    .del-btn {
-      background: none;
-      border: none;
-      color: #dc3545;
-      cursor: pointer;
-      font-size: 16px;
-      padding: 0 4px;
-      line-height: 1;
-    }
+    .del-btn { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 16px; padding: 0 4px; }
+    .del-btn:hover { color: #b91c1c; }
 
-    .del-btn:hover { color: #a71d2a; }
-
-    /* Buttons */
-    .btn-row {
-      display: flex;
-      gap: 10px;
-      margin-top: 16px;
-    }
+    .btn-row { display: flex; gap: 10px; margin-top: 14px; }
 
     .btn {
       padding: 7px 18px;
       border-radius: 5px;
       font-size: 13px;
       cursor: pointer;
-      border: 1px solid #dee2e6;
+      border: 1px solid #d1d5db;
       background: #fff;
-      color: #495057;
-      transition: background 0.15s;
+      color: #374151;
     }
 
-    .btn:hover { background: #f1f3f5; }
-
-    .btn-primary {
-      background: #1a6b4a;
-      color: #fff;
-      border-color: #1a6b4a;
-    }
-
+    .btn:hover { background: #f9fafb; }
+    .btn-primary { background: #1a6b4a; color: #fff; border-color: #1a6b4a; }
     .btn-primary:hover { background: #155c3e; }
+    .btn-sm { padding: 4px 12px; font-size: 12px; }
+    .btn-danger { background: #ef4444; color: #fff; border-color: #ef4444; }
+    .btn-danger:hover { background: #dc2626; }
 
-    .btn-sm {
-      padding: 4px 12px;
-      font-size: 12px;
-    }
+    .danger-card { border: 1px solid #fee2e2; }
+    .danger-card h2 { color: #dc2626; }
 
-    /* Toast */
     #toast {
       position: fixed;
-      bottom: 20px;
-      right: 20px;
+      bottom: 20px; right: 20px;
       background: #1a6b4a;
       color: #fff;
       padding: 10px 18px;
@@ -159,93 +148,98 @@
     }
 
     #toast.show { opacity: 1; }
-
-    /* Danger zone */
-    .danger-card {
-      border: 1px solid #fee2e2;
-      background: #fff;
-    }
-
-    .danger-card h2 { color: #dc3545; }
-
-    .btn-danger {
-      background: #dc3545;
-      color: #fff;
-      border-color: #dc3545;
-    }
-
-    .btn-danger:hover { background: #bb2d3b; }
+    #toast.error { background: #ef4444; }
   </style>
 </head>
 <body>
 
 <header>
   <h1>DPC Workflow Observer — Settings</h1>
-  <p>Configure which tools to recognize and how patient names are detected.</p>
+  <p>Configure AI analysis and recognized tools.</p>
 </header>
 
 <main>
 
-  <!-- Tool recognition -->
+  <!-- Claude API key -->
   <div class="card">
-    <h2>Recognized tools</h2>
-    <div class="subtitle">
-      The extension matches tab URLs against these patterns. Add your exact CPL/Envision portal URLs here.
+    <h2>AI analysis (Claude API)</h2>
+    <div class="sub">
+      Optional but powerful. Without a key, the extension still finds common workflow patterns.
+      With a key, it sends your <strong>anonymized</strong> workflow sequences (no patient names, no URLs)
+      to Claude for deeper, personalized suggestions.
+      <br><br>
+      Get a key at <strong>console.anthropic.com</strong> → API keys.
+      A few cents per analysis session. Patient data is never sent — only tool names and sequences.
     </div>
 
-    <table id="tool-list">
+    <label for="api-key">API key</label>
+    <div class="key-row">
+      <input type="password" id="api-key" placeholder="sk-ant-api03-…" autocomplete="off" />
+      <button class="toggle-vis" id="toggle-key">Show</button>
+    </div>
+
+    <div class="key-status">
+      <div class="status-dot" id="key-dot"></div>
+      <span id="key-status-text">Not configured</span>
+      <button class="test-key-btn" id="test-key-btn">Test connection</button>
+    </div>
+
+    <p class="api-note">
+      Your key is stored only in chrome.storage.local on this device.
+      It is never synced to Google or any other server.
+    </p>
+  </div>
+
+  <!-- Recognized tools -->
+  <div class="card">
+    <h2>Recognized tools</h2>
+    <div class="sub">
+      Match tab URLs against these patterns. The most important ones to add are your CPL portal URL
+      and Envision URL — copy the hostname from your browser when you're on those sites.
+    </div>
+
+    <table>
       <thead>
         <tr>
-          <th style="width:40%">URL pattern (hostname + path prefix)</th>
-          <th style="width:25%">Display name</th>
+          <th style="width:42%">URL pattern</th>
+          <th style="width:26%">Display name</th>
           <th style="width:22%">Category</th>
-          <th style="width:8%"></th>
+          <th style="width:10%"></th>
         </tr>
       </thead>
-      <tbody id="tool-body">
-        <!-- Rows injected by JS -->
-      </tbody>
+      <tbody id="tool-body"></tbody>
     </table>
 
     <div class="btn-row">
-      <button class="btn btn-sm" id="btn-add-tool">+ Add tool</button>
+      <button class="btn btn-sm" id="btn-add">+ Add tool</button>
     </div>
   </div>
 
   <!-- Patient name pattern -->
   <div class="card">
     <h2>Patient name detection</h2>
-    <div class="subtitle">
-      Regex used to extract a patient name from a tab title. Default matches "LastName.FirstName" format.
-      Capture group 1 is used as the name.
-    </div>
-    <input
-      type="text"
-      id="patient-regex"
-      style="width:100%; font-family:monospace; border:1px solid #dee2e6; border-radius:4px; padding:7px 10px; font-size:13px;"
-      placeholder="\b([A-Z][a-zA-Z'-]+\.[A-Z][a-zA-Z'-]+)\b"
-    />
-    <div style="font-size:11px; color:#6c757d; margin-top:6px;">
-      Test it: open a patient's Google Doc and check the popup to see if the name is detected.
-    </div>
+    <div class="sub">Regex used to extract a patient name from a tab title. Capture group 1 is used.</div>
+    <label for="patient-regex">Pattern</label>
+    <input type="text" id="patient-regex" placeholder="\b([A-Z][a-zA-Z'-]+\.[A-Z][a-zA-Z'-]+)\b" />
+    <p class="api-note" style="margin-top:8px">Default matches your LastName.FirstName convention. Open a patient's doc and check the popup to verify detection.</p>
   </div>
 
-  <!-- Save -->
+  <!-- Save row -->
   <div class="btn-row">
     <button class="btn btn-primary" id="btn-save">Save settings</button>
-    <button class="btn" id="btn-reset">Reset to defaults</button>
+    <button class="btn" id="btn-reset">Reset tools to defaults</button>
   </div>
 
   <!-- Danger zone -->
-  <div class="card danger-card" style="margin-top:32px;">
+  <div class="card danger-card" style="margin-top:28px">
     <h2>Danger zone</h2>
-    <div class="subtitle">Permanently delete all recorded activity data from this device.</div>
-    <button class="btn btn-danger" id="btn-clear">Clear all activity data</button>
+    <div class="sub">Delete all recorded activity and suggestions from this device.</div>
+    <button class="btn btn-danger" id="btn-clear">Clear all data</button>
   </div>
 
 </main>
 
-<div id="toast">Settings saved.</div>
+<div id="toast"></div>
 
 <script src="options.js"></script>
 </body>

@@ -1,8 +1,11 @@
-// DPC Workflow Observer - Background Service Worker
-// All data stays in chrome.storage.local — nothing leaves your device.
+// DPC Workflow Observer — Background Service Worker
+// All activity data stays in chrome.storage.local (never synced, never transmitted without permission).
+
+importScripts('analyzer.js');
+importScripts('builder.js');
 
 // ---------------------------------------------------------------------------
-// Tool definitions — add/edit via the Options page
+// Tool registry (defaults — editable in Options)
 // ---------------------------------------------------------------------------
 const DEFAULT_TOOLS = [
   { pattern: 'docs.google.com/document',    name: 'Google Docs',   category: 'chart'          },
@@ -13,103 +16,82 @@ const DEFAULT_TOOLS = [
   { pattern: 'www.doximity.com',            name: 'Doximity',      category: 'fax'             },
   { pattern: 'dialer.doximity.com',         name: 'Doximity',      category: 'fax'             },
   { pattern: 'calendly.com',                name: 'Calendly',      category: 'scheduling'      },
-  { pattern: 'app.iprescribe.com',          name: 'iPrescribe',    category: 'prescriptions'   },
-  // CPL and Envision URLs — update in Options if different
   { pattern: 'portal.cpllabs.com',          name: 'CPL Labs',      category: 'labs'            },
   { pattern: 'cplabs.com',                  name: 'CPL Labs',      category: 'labs'            },
   { pattern: 'envisionradiology.com',       name: 'Envision',      category: 'imaging'         },
   { pattern: 'envisionimaging.com',         name: 'Envision',      category: 'imaging'         },
 ];
 
-// Minimum time on a tab to be worth logging (ms)
-const MIN_DURATION_MS = 4000;
+const MIN_DURATION_MS   = 4000;   // ignore visits < 4s
+const SESSION_GAP_MS    = 10 * 60 * 1000; // 10 min inactivity = new session
+const MIN_EVENTS_TO_ANALYZE = 5;  // don't analyze with too little data
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 async function getTools() {
-  const result = await chrome.storage.local.get(['customTools']);
-  return result.customTools || DEFAULT_TOOLS;
+  const r = await chrome.storage.local.get(['customTools']);
+  return r.customTools || DEFAULT_TOOLS;
 }
 
 function identifyTool(url, tools) {
   if (!url) return null;
   let hostname, pathname;
-  try {
-    const u = new URL(url);
-    hostname = u.hostname;
-    pathname = u.pathname;
-  } catch {
-    return null;
-  }
-
-  const fullPath = hostname + pathname;
-  for (const tool of tools) {
-    if (
-      fullPath.startsWith(tool.pattern) ||
-      hostname === tool.pattern ||
-      hostname.endsWith('.' + tool.pattern)
-    ) {
-      return { name: tool.name, category: tool.category, pattern: tool.pattern };
-    }
+  try { const u = new URL(url); hostname = u.hostname; pathname = u.pathname; }
+  catch { return null; }
+  const full = hostname + pathname;
+  for (const t of tools) {
+    if (full.startsWith(t.pattern) || hostname === t.pattern || hostname.endsWith('.' + t.pattern))
+      return { name: t.name, category: t.category };
   }
   return null;
 }
 
-// Extract patient name from a Google Doc title.
-// Expected formats: "LastName.FirstName" or "LastName.FirstName - Chart" etc.
 function extractPatient(title) {
   if (!title) return null;
-  const match = title.match(/\b([A-Z][a-zA-Z'-]+\.[A-Z][a-zA-Z'-]+)\b/);
-  return match ? match[1] : null;
+  const m = title.match(/\b([A-Z][a-zA-Z'\-]+\.[A-Z][a-zA-Z'\-]+)\b/);
+  return m ? m[1] : null;
 }
 
-function todayDateString() {
-  return new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
-}
+function todayStr() { return new Date().toLocaleDateString('en-CA'); }
 
 // ---------------------------------------------------------------------------
 // Activity log
 // ---------------------------------------------------------------------------
 
 async function logActivity(entry) {
-  const result = await chrome.storage.local.get(['activityLog']);
-  const log = result.activityLog || [];
+  const r   = await chrome.storage.local.get(['activityLog']);
+  const log = r.activityLog || [];
   log.push(entry);
-
-  // Retain 60 days
   const cutoff = Date.now() - 60 * 24 * 60 * 60 * 1000;
-  const trimmed = log.filter(e => new Date(e.startTime).getTime() > cutoff);
-
-  await chrome.storage.local.set({ activityLog: trimmed });
+  await chrome.storage.local.set({
+    activityLog: log.filter(e => new Date(e.startTime).getTime() > cutoff)
+  });
 }
 
 // ---------------------------------------------------------------------------
-// Tab state
+// Tab tracking
 // ---------------------------------------------------------------------------
 
-let activeTabId   = null;
-let activeStart   = null;   // ms timestamp
-let activeInfo    = null;   // { url, title, tool, patient, startTime ISO }
+let activeTabId  = null;
+let activeStart  = null;
+let activeInfo   = null;
+let lastActivity = Date.now();
 
 async function snapshotTab(tabId) {
-  if (tabId === null || tabId === undefined) return null;
+  if (tabId == null) return null;
   try {
-    const tab = await chrome.tabs.get(tabId);
-    const tools = await getTools();
-    const tool  = identifyTool(tab.url, tools);
-    const patient = extractPatient(tab.title);
+    const tab    = await chrome.tabs.get(tabId);
+    const tools  = await getTools();
     return {
       url:       tab.url,
       title:     tab.title,
-      tool,
-      patient,
+      tool:      identifyTool(tab.url, tools),
+      patient:   extractPatient(tab.title),
       startTime: new Date().toISOString(),
     };
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 async function flushActive(endTime) {
@@ -118,41 +100,44 @@ async function flushActive(endTime) {
   if (duration < MIN_DURATION_MS) return;
 
   await logActivity({
-    id:        `${activeStart}-${Math.random().toString(36).slice(2, 7)}`,
+    id:        `${activeStart}-${Math.random().toString(36).slice(2,7)}`,
     startTime: activeInfo.startTime,
     endTime:   new Date(endTime || Date.now()).toISOString(),
-    duration:  Math.round(duration / 1000), // seconds
+    duration:  Math.round(duration / 1000),
     url:       activeInfo.url,
     title:     activeInfo.title,
     tool:      activeInfo.tool,
     patient:   activeInfo.patient,
-    date:      todayDateString(),
+    date:      todayStr(),
     note:      null,
   });
+
+  lastActivity = Date.now();
 }
 
 async function switchToTab(newTabId) {
   const now = Date.now();
-  await flushActive(now);
+  const gap  = now - lastActivity;
 
+  // If gap > SESSION_GAP_MS, the previous session ended — trigger analysis
+  if (gap > SESSION_GAP_MS) {
+    await triggerAnalysis('session_end');
+  }
+
+  await flushActive(now);
   activeTabId = newTabId;
   activeStart = now;
-  activeInfo  = newTabId !== null ? await snapshotTab(newTabId) : null;
+  activeInfo  = newTabId != null ? await snapshotTab(newTabId) : null;
 }
 
 // ---------------------------------------------------------------------------
-// Chrome event listeners
+// Chrome tab/window events
 // ---------------------------------------------------------------------------
 
-chrome.tabs.onActivated.addListener(async ({ tabId }) => {
-  await switchToTab(tabId);
-});
+chrome.tabs.onActivated.addListener(async ({ tabId }) => { await switchToTab(tabId); });
 
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
-  if (tabId !== activeTabId) return;
-  if (changeInfo.status !== 'complete') return;
-
-  // URL changed within same tab — flush old, start new
+  if (tabId !== activeTabId || changeInfo.status !== 'complete') return;
   const now = Date.now();
   await flushActive(now);
   activeStart = now;
@@ -162,68 +147,121 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
 chrome.tabs.onRemoved.addListener(async (tabId) => {
   if (tabId !== activeTabId) return;
   await flushActive();
-  activeTabId = null;
-  activeStart = null;
-  activeInfo  = null;
+  activeTabId = null; activeStart = null; activeInfo = null;
 });
 
 chrome.windows.onFocusChanged.addListener(async (windowId) => {
   if (windowId === chrome.windows.WINDOW_ID_NONE) {
-    // Browser lost focus — flush and pause timer
     await flushActive();
-    activeStart = null; // paused
+    activeStart = null;
   } else {
-    // Browser regained focus — resume timer
-    if (activeTabId !== null) {
+    if (activeTabId != null) {
       activeStart = Date.now();
-      // Refresh tab snapshot in case things changed
-      activeInfo = await snapshotTab(activeTabId);
+      activeInfo  = await snapshotTab(activeTabId);
     }
   }
 });
 
 // ---------------------------------------------------------------------------
-// Message API (used by popup + dashboard)
+// Analysis triggering
 // ---------------------------------------------------------------------------
 
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+async function triggerAnalysis(reason) {
+  const r   = await chrome.storage.local.get(['activityLog', 'claudeApiKey', 'lastAnalyzed']);
+  const log = r.activityLog || [];
 
-  if (message.type === 'GET_CURRENT') {
-    sendResponse({
-      tool:    activeInfo?.tool    ?? null,
-      patient: activeInfo?.patient ?? null,
-      title:   activeInfo?.title   ?? null,
-      url:     activeInfo?.url     ?? null,
+  if (log.length < MIN_EVENTS_TO_ANALYZE) return;
+
+  // Don't re-analyze more than once per hour automatically
+  if (reason === 'session_end' && r.lastAnalyzed) {
+    const age = Date.now() - new Date(r.lastAnalyzed).getTime();
+    if (age < 60 * 60 * 1000) return;
+  }
+
+  try {
+    const suggestions = await runAnalysis(log, r.claudeApiKey || null);
+    await chrome.storage.local.set({
+      suggestions,
+      lastAnalyzed: new Date().toISOString(),
+    });
+
+    // Badge the extension icon with suggestion count
+    if (suggestions.length > 0) {
+      chrome.action.setBadgeText({ text: String(suggestions.length) });
+      chrome.action.setBadgeBackgroundColor({ color: '#1a6b4a' });
+    }
+  } catch (err) {
+    console.error('[DPC Observer] Analysis failed:', err);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Message API
+// ---------------------------------------------------------------------------
+
+chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+
+  if (msg.type === 'GET_CURRENT') {
+    sendResponse({ tool: activeInfo?.tool ?? null, patient: activeInfo?.patient ?? null, title: activeInfo?.title ?? null });
+    return true;
+  }
+
+  if (msg.type === 'GET_LOG') {
+    chrome.storage.local.get(['activityLog'], r => {
+      const log = r.activityLog || [];
+      sendResponse({ log: msg.date ? log.filter(e => e.date === msg.date) : log });
     });
     return true;
   }
 
-  if (message.type === 'GET_LOG') {
-    chrome.storage.local.get(['activityLog'], (result) => {
-      const log = result.activityLog || [];
-      const filtered = message.date
-        ? log.filter(e => e.date === message.date)
-        : log;
-      sendResponse({ log: filtered });
+  if (msg.type === 'GET_SUGGESTIONS') {
+    chrome.storage.local.get(['suggestions', 'lastAnalyzed'], r => {
+      sendResponse({ suggestions: r.suggestions || [], lastAnalyzed: r.lastAnalyzed || null });
     });
     return true;
   }
 
-  if (message.type === 'UPDATE_ENTRY') {
-    chrome.storage.local.get(['activityLog'], (result) => {
-      const log = result.activityLog || [];
-      const idx = log.findIndex(e => e.id === message.id);
+  if (msg.type === 'RUN_ANALYSIS') {
+    triggerAnalysis('manual').then(() => {
+      chrome.storage.local.get(['suggestions', 'lastAnalyzed'], r => {
+        sendResponse({ suggestions: r.suggestions || [], lastAnalyzed: r.lastAnalyzed || null });
+      });
+    });
+    return true;
+  }
+
+  if (msg.type === 'DISMISS_SUGGESTION') {
+    chrome.storage.local.get(['suggestions'], r => {
+      const suggestions = (r.suggestions || []).filter(s => s.id !== msg.id);
+      chrome.storage.local.set({ suggestions }, () => sendResponse({ success: true }));
+    });
+    return true;
+  }
+
+  if (msg.type === 'UPDATE_ENTRY') {
+    chrome.storage.local.get(['activityLog'], r => {
+      const log = r.activityLog || [];
+      const idx = log.findIndex(e => e.id === msg.id);
       if (idx !== -1) {
-        if (message.note    !== undefined) log[idx].note    = message.note;
-        if (message.patient !== undefined) log[idx].patient = message.patient;
+        if (msg.note    !== undefined) log[idx].note    = msg.note;
+        if (msg.patient !== undefined) log[idx].patient = msg.patient;
       }
       chrome.storage.local.set({ activityLog: log }, () => sendResponse({ success: true }));
     });
     return true;
   }
 
-  if (message.type === 'CLEAR_LOG') {
-    chrome.storage.local.set({ activityLog: [] }, () => sendResponse({ success: true }));
+  if (msg.type === 'CLEAR_LOG') {
+    chrome.storage.local.set({ activityLog: [], suggestions: [] }, () => {
+      chrome.action.setBadgeText({ text: '' });
+      sendResponse({ success: true });
+    });
+    return true;
+  }
+
+  if (msg.type === 'GET_BUILD') {
+    const code = generateAutomation(msg.automationType, msg.context || {});
+    sendResponse({ code });
     return true;
   }
 });

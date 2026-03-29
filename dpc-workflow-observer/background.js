@@ -3,6 +3,7 @@
 
 importScripts('analyzer.js');
 importScripts('builder.js');
+importScripts('wren.js');
 
 // ---------------------------------------------------------------------------
 // Tool registry (defaults — editable in Options)
@@ -190,9 +191,48 @@ async function triggerAnalysis(reason) {
       chrome.action.setBadgeText({ text: String(suggestions.length) });
       chrome.action.setBadgeBackgroundColor({ color: '#1a6b4a' });
     }
+
+    // Ask Wren if she has a proactive observation after session ends
+    if (reason === 'session_end' && r.claudeApiKey) {
+      await triggerWrenObservation(log, r.claudeApiKey);
+    }
   } catch (err) {
     console.error('[DPC Observer] Analysis failed:', err);
   }
+}
+
+async function triggerWrenObservation(log, apiKey) {
+  const r = await chrome.storage.local.get(['wrenLastProactive', 'wrenConversation', 'wrenChatModel']);
+
+  // Don't proactively message more than once every 4 hours
+  if (r.wrenLastProactive) {
+    const age = Date.now() - new Date(r.wrenLastProactive).getTime();
+    if (age < 4 * 60 * 60 * 1000) return;
+  }
+
+  const model      = r.wrenChatModel || WREN_MODELS.observation;
+  const observation = await generateProactiveObservation(log, apiKey, model);
+  if (!observation) return;
+
+  const history = r.wrenConversation || [];
+  history.push({
+    role:      'assistant',
+    content:   observation,
+    timestamp: new Date().toISOString(),
+    proactive: true,
+  });
+
+  await chrome.storage.local.set({
+    wrenConversation:  history,
+    wrenLastProactive: new Date().toISOString(),
+    wrenHasUnread:     true,
+  });
+
+  // Update badge to show Wren has something to say
+  const r2 = await chrome.storage.local.get(['suggestions']);
+  const sugCount = (r2.suggestions || []).length;
+  chrome.action.setBadgeText({ text: sugCount > 0 ? String(sugCount) : '!' });
+  chrome.action.setBadgeBackgroundColor({ color: '#1a6b4a' });
 }
 
 // ---------------------------------------------------------------------------
@@ -251,8 +291,92 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return true;
   }
 
+  // Wren chat messages
+  if (msg.type === 'WREN_GET_HISTORY') {
+    chrome.storage.local.get(['wrenConversation', 'wrenHasUnread'], r => {
+      sendResponse({ history: r.wrenConversation || [], hasUnread: r.wrenHasUnread || false });
+    });
+    return true;
+  }
+
+  if (msg.type === 'WREN_MARK_READ') {
+    chrome.storage.local.set({ wrenHasUnread: false }, () => sendResponse({ success: true }));
+    return true;
+  }
+
+  if (msg.type === 'WREN_SEND') {
+    chrome.storage.local.get(['activityLog', 'claudeApiKey', 'wrenConversation', 'wrenChatModel'], async r => {
+      const apiKey  = r.claudeApiKey || '';
+      const log     = r.activityLog  || [];
+      const model   = r.wrenChatModel || WREN_MODELS.chat;
+      const history = (r.wrenConversation || []).map(m => ({ role: m.role, content: m.content }));
+
+      if (!apiKey) {
+        sendResponse({ error: 'no_key', reply: null });
+        return;
+      }
+
+      try {
+        const reply = await sendWrenMessage(msg.message, history, log, apiKey, model);
+
+        const updated = [...(r.wrenConversation || [])];
+        updated.push({ role: 'user',      content: msg.message, timestamp: new Date().toISOString() });
+        updated.push({ role: 'assistant', content: reply,       timestamp: new Date().toISOString() });
+
+        // Keep last 60 messages to manage token costs
+        const trimmed = updated.slice(-60);
+        chrome.storage.local.set({ wrenConversation: trimmed }, () => {
+          sendResponse({ reply });
+        });
+      } catch (err) {
+        sendResponse({ error: err.message, reply: null });
+      }
+    });
+    return true;
+  }
+
+  if (msg.type === 'WREN_FIRST_CONTACT') {
+    chrome.storage.local.get(['activityLog', 'claudeApiKey', 'wrenConversation', 'wrenChatModel', 'wrenFirstContactDone'], async r => {
+      if (r.wrenFirstContactDone) {
+        sendResponse({ reply: null, alreadyDone: true });
+        return;
+      }
+
+      const apiKey = r.claudeApiKey || '';
+      const log    = r.activityLog  || [];
+      const model  = r.wrenChatModel || WREN_MODELS.chat;
+
+      if (!apiKey) {
+        sendResponse({ error: 'no_key', reply: null });
+        return;
+      }
+
+      try {
+        const reply = await generateFirstContactMessage(log, apiKey, model);
+        if (!reply) { sendResponse({ reply: null }); return; }
+
+        const history = [...(r.wrenConversation || [])];
+        history.unshift({ role: 'assistant', content: reply, timestamp: new Date().toISOString(), firstContact: true });
+
+        chrome.storage.local.set({ wrenConversation: history, wrenFirstContactDone: true }, () => {
+          sendResponse({ reply });
+        });
+      } catch (err) {
+        sendResponse({ error: err.message, reply: null });
+      }
+    });
+    return true;
+  }
+
+  if (msg.type === 'WREN_CLEAR') {
+    chrome.storage.local.set({ wrenConversation: [], wrenFirstContactDone: false, wrenHasUnread: false }, () => {
+      sendResponse({ success: true });
+    });
+    return true;
+  }
+
   if (msg.type === 'CLEAR_LOG') {
-    chrome.storage.local.set({ activityLog: [], suggestions: [] }, () => {
+    chrome.storage.local.set({ activityLog: [], suggestions: [], wrenConversation: [], wrenFirstContactDone: false, wrenHasUnread: false }, () => {
       chrome.action.setBadgeText({ text: '' });
       sendResponse({ success: true });
     });

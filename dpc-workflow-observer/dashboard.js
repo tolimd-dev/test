@@ -50,11 +50,13 @@ document.querySelectorAll('.nav-tab').forEach(tab => {
     tab.classList.add('active');
     currentView = tab.dataset.view;
 
+    document.getElementById('view-wren').classList.toggle('hidden',        currentView !== 'wren');
     document.getElementById('view-suggestions').classList.toggle('hidden', currentView !== 'suggestions');
     document.getElementById('view-activity').classList.toggle('hidden',    currentView !== 'activity');
     document.getElementById('view-timeline').classList.toggle('hidden',    currentView !== 'timeline');
 
     if (currentView === 'activity' || currentView === 'timeline') loadActivity(activityDate);
+    if (currentView === 'wren') initWrenView();
   });
 });
 
@@ -412,7 +414,178 @@ document.getElementById('date-picker-tl').addEventListener('change', e => {
 document.getElementById('btn-settings').addEventListener('click', () => chrome.runtime.openOptionsPage());
 
 // ---------------------------------------------------------------------------
+// Wren chat
+// ---------------------------------------------------------------------------
+
+let wrenInitialized = false;
+
+function fmtMsgTime(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+}
+
+function renderMessage(msg) {
+  const role      = msg.role === 'assistant' ? 'wren' : 'user';
+  const sender    = msg.role === 'assistant' ? 'Wren' : 'You';
+  const proactive = msg.proactive ? ' proactive' : '';
+
+  return `
+    <div class="msg ${role}${proactive}">
+      <div class="msg-sender">${sender}</div>
+      <div class="msg-bubble">${esc(msg.content)}</div>
+      <div class="msg-time">${fmtMsgTime(msg.timestamp)}</div>
+    </div>`;
+}
+
+function appendMessage(container, msg) {
+  const div = document.createElement('div');
+  div.innerHTML = renderMessage(msg);
+  container.appendChild(div.firstElementChild);
+  container.scrollTop = container.scrollHeight;
+}
+
+function showThinking(container) {
+  const el = document.createElement('div');
+  el.className = 'wren-thinking';
+  el.id = 'wren-thinking';
+  el.innerHTML = '<div class="thinking-dot"></div><div class="thinking-dot"></div><div class="thinking-dot"></div>';
+  container.appendChild(el);
+  container.scrollTop = container.scrollHeight;
+}
+
+function hideThinking() {
+  document.getElementById('wren-thinking')?.remove();
+}
+
+function initWrenView() {
+  const container = document.getElementById('view-wren');
+
+  // Mark messages as read
+  chrome.runtime.sendMessage({ type: 'WREN_MARK_READ' });
+  document.getElementById('wren-unread-dot').classList.add('hidden');
+
+  if (wrenInitialized) return; // Already built the DOM
+  wrenInitialized = true;
+
+  // Check if API key exists first
+  chrome.storage.local.get(['claudeApiKey'], r => {
+    if (!r.claudeApiKey) {
+      container.innerHTML = `
+        <div class="wren-wrap">
+          <div class="wren-header">
+            <div class="wren-avatar">🐦</div>
+            <div class="wren-header-text">
+              <h2>Wren</h2>
+              <p>Your design + engineering partner</p>
+            </div>
+          </div>
+          <div class="wren-no-key">
+            <h3>Wren needs an API key to talk</h3>
+            <p>Add your Claude API key in Settings to activate Wren. She'll introduce herself once you do, based on what she's already observed about your workflow.</p>
+            <p style="font-size:11px; margin-top:8px; color:#94a3b8;">Get a key at console.anthropic.com — for a solo practice this costs roughly $2–5/month. Sign an Anthropic HIPAA BAA before entering patient-related information in chat.</p>
+            <button onclick="chrome.runtime.openOptionsPage()">Open Settings</button>
+          </div>
+        </div>`;
+      return;
+    }
+
+    buildWrenUI(container);
+  });
+}
+
+function buildWrenUI(container) {
+  container.innerHTML = `
+    <div class="wren-wrap">
+      <div class="wren-header">
+        <div class="wren-avatar">🐦</div>
+        <div class="wren-header-text">
+          <h2>Wren</h2>
+          <p>Design + engineering partner — watching your workflow</p>
+        </div>
+      </div>
+      <div class="wren-messages" id="wren-messages"></div>
+      <div class="wren-input-area">
+        <textarea class="wren-input" id="wren-input" placeholder="Ask Wren anything about your workflow…" rows="1"></textarea>
+        <button class="wren-send" id="wren-send" title="Send">&#x27A4;</button>
+      </div>
+    </div>`;
+
+  const messagesEl = document.getElementById('wren-messages');
+  const inputEl    = document.getElementById('wren-input');
+  const sendBtn    = document.getElementById('wren-send');
+
+  // Auto-resize textarea
+  inputEl.addEventListener('input', () => {
+    inputEl.style.height = 'auto';
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+  });
+
+  // Send on Enter (Shift+Enter for newline)
+  inputEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  sendBtn.addEventListener('click', sendMessage);
+
+  // Load existing conversation
+  chrome.runtime.sendMessage({ type: 'WREN_GET_HISTORY' }, ({ history }) => {
+    if (history && history.length > 0) {
+      history.forEach(msg => appendMessage(messagesEl, msg));
+    } else {
+      // First time — trigger first contact
+      showThinking(messagesEl);
+      chrome.runtime.sendMessage({ type: 'WREN_FIRST_CONTACT' }, ({ reply, error, alreadyDone }) => {
+        hideThinking();
+        if (reply) appendMessage(messagesEl, { role: 'assistant', content: reply, timestamp: new Date().toISOString() });
+        else if (!alreadyDone && error === 'no_key') {
+          appendMessage(messagesEl, { role: 'assistant', content: "I need an API key to talk. Add it in Settings.", timestamp: new Date().toISOString() });
+        }
+      });
+    }
+  });
+
+  function sendMessage() {
+    const text = inputEl.value.trim();
+    if (!text) return;
+
+    inputEl.value = '';
+    inputEl.style.height = 'auto';
+    sendBtn.disabled = true;
+
+    appendMessage(messagesEl, { role: 'user', content: text, timestamp: new Date().toISOString() });
+    showThinking(messagesEl);
+
+    chrome.runtime.sendMessage({ type: 'WREN_SEND', message: text }, ({ reply, error }) => {
+      hideThinking();
+      sendBtn.disabled = false;
+      inputEl.focus();
+
+      if (reply) {
+        appendMessage(messagesEl, { role: 'assistant', content: reply, timestamp: new Date().toISOString() });
+      } else if (error === 'no_key') {
+        appendMessage(messagesEl, { role: 'assistant', content: "I need a Claude API key to respond. Add it in Settings.", timestamp: new Date().toISOString() });
+      } else if (error) {
+        appendMessage(messagesEl, { role: 'assistant', content: `Something went wrong: ${error}`, timestamp: new Date().toISOString() });
+      }
+    });
+  }
+}
+
+// Check for unread Wren messages on load
+function checkWrenUnread() {
+  chrome.runtime.sendMessage({ type: 'WREN_GET_HISTORY' }, ({ hasUnread }) => {
+    if (hasUnread) {
+      document.getElementById('wren-unread-dot').classList.remove('hidden');
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Init
 // ---------------------------------------------------------------------------
 
 loadSuggestions();
+checkWrenUnread();

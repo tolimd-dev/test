@@ -187,7 +187,18 @@
     <p class="api-note">
       Your key is stored only in chrome.storage.local on this device.
       It is never synced to Google or any other server.
+      <br><br>
+      <strong>HIPAA:</strong> Sign an Anthropic BAA before sending any patient-identifiable information in chat.
+      Wren's background analysis is already anonymized. Chat messages are your responsibility to keep de-identified,
+      or sign the BAA first (console.anthropic.com → contact sales).
     </p>
+
+    <label for="wren-model" style="margin-top:16px;">Wren conversation model</label>
+    <select id="wren-model" style="width:100%; margin-top:4px;">
+      <option value="claude-haiku-4-5-20251001">Claude Haiku (fastest, cheapest — ~$1–3/mo)</option>
+      <option value="claude-sonnet-4-6">Claude Sonnet (smarter, better design reasoning — ~$5–15/mo)</option>
+    </select>
+    <p class="api-note">Haiku is fine for most workflow conversations. Use Sonnet if you want Wren to reason through more complex design tradeoffs.</p>
   </div>
 
   <!-- Recognized tools -->

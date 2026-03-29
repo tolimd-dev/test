@@ -28,6 +28,25 @@ chrome.runtime.sendMessage({ type: 'GET_LOG', date: today }, res => {
   document.getElementById('s-tools').textContent    = tools.size;
 });
 
+// Wren unread banner
+chrome.runtime.sendMessage({ type: 'WREN_GET_HISTORY' }, res => {
+  if (!res?.hasUnread) return;
+  const banner = document.getElementById('wren-banner');
+  banner.classList.remove('hidden');
+
+  // Show a preview of Wren's last message
+  const last = (res.history || []).filter(m => m.role === 'assistant').slice(-1)[0];
+  if (last) {
+    const preview = last.content.slice(0, 60) + (last.content.length > 60 ? '…' : '');
+    document.getElementById('wren-preview').textContent = preview;
+  }
+
+  banner.addEventListener('click', () => {
+    chrome.tabs.create({ url: chrome.runtime.getURL('dashboard.html') + '#wren' });
+    window.close();
+  });
+});
+
 // Suggestions banner
 chrome.runtime.sendMessage({ type: 'GET_SUGGESTIONS' }, res => {
   const sugs = res?.suggestions || [];

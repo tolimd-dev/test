@@ -530,6 +530,195 @@
     .tl-title { font-size: 12px; color: #64748b; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     .hidden { display: none !important; }
+
+    /* ---- Wren chat ---- */
+    .wren-wrap {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 110px);
+    }
+
+    .wren-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 0 10px;
+      border-bottom: 1px solid #e2e8f0;
+      margin-bottom: 0;
+    }
+
+    .wren-avatar {
+      width: 36px; height: 36px;
+      background: #1a6b4a;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .wren-header-text h2 { font-size: 15px; font-weight: 700; color: #0f172a; }
+    .wren-header-text p  { font-size: 12px; color: #64748b; margin-top: 1px; }
+
+    .wren-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .msg {
+      display: flex;
+      flex-direction: column;
+      max-width: 82%;
+    }
+
+    .msg.wren { align-self: flex-start; }
+    .msg.user { align-self: flex-end;   }
+
+    .msg-sender {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #94a3b8;
+      margin-bottom: 4px;
+    }
+
+    .msg.user .msg-sender { text-align: right; }
+
+    .msg-bubble {
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .msg.wren .msg-bubble {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #0f172a;
+      border-bottom-left-radius: 4px;
+    }
+
+    .msg.user .msg-bubble {
+      background: #1a6b4a;
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+
+    .msg-time {
+      font-size: 10px;
+      color: #cbd5e1;
+      margin-top: 4px;
+    }
+
+    .msg.user .msg-time { text-align: right; }
+
+    /* Wren proactive badge */
+    .msg.wren.proactive .msg-bubble {
+      border-color: #86efac;
+      background: #f0fdf4;
+    }
+
+    .wren-input-area {
+      border-top: 1px solid #e2e8f0;
+      padding: 12px 0 4px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .wren-input {
+      flex: 1;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-family: inherit;
+      resize: none;
+      min-height: 42px;
+      max-height: 120px;
+      line-height: 1.5;
+      color: #0f172a;
+      background: #fff;
+      transition: border-color 0.15s;
+    }
+
+    .wren-input:focus {
+      outline: none;
+      border-color: #1a6b4a;
+      box-shadow: 0 0 0 2px rgba(26,107,74,0.1);
+    }
+
+    .wren-send {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: #1a6b4a;
+      border: none;
+      cursor: pointer;
+      color: #fff;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+
+    .wren-send:hover    { background: #155c3e; }
+    .wren-send:disabled { background: #94a3b8; cursor: not-allowed; }
+
+    .wren-thinking {
+      align-self: flex-start;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 8px 14px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 12px;
+      border-bottom-left-radius: 4px;
+    }
+
+    .thinking-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #1a6b4a;
+      animation: thinking 1.2s ease-in-out infinite;
+    }
+
+    .thinking-dot:nth-child(2) { animation-delay: 0.2s; }
+    .thinking-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes thinking {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30%            { transform: translateY(-4px); opacity: 1; }
+    }
+
+    .wren-no-key {
+      text-align: center;
+      padding: 40px 20px;
+      color: #64748b;
+    }
+
+    .wren-no-key h3 { font-size: 15px; color: #334155; margin-bottom: 8px; }
+    .wren-no-key p  { font-size: 13px; line-height: 1.6; max-width: 360px; margin: 0 auto 14px; }
+
+    .wren-no-key button {
+      padding: 7px 18px;
+      background: #1a6b4a;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-size: 13px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -542,6 +731,10 @@
 </header>
 
 <nav class="nav">
+  <div class="nav-tab" data-view="wren">
+    Wren
+    <span class="badge-count hidden" id="wren-unread-dot" style="background:#ef4444; padding: 2px 6px;">●</span>
+  </div>
   <div class="nav-tab active" data-view="suggestions">
     Suggestions
     <span class="badge-count hidden" id="badge-count">0</span>
@@ -551,6 +744,9 @@
 </nav>
 
 <main>
+
+  <!-- WREN CHAT VIEW -->
+  <div id="view-wren" class="hidden" style="max-width:680px; margin:0 auto;"></div>
 
   <!-- SUGGESTIONS VIEW -->
   <div id="view-suggestions">

@@ -117,10 +117,11 @@ document.getElementById('test-key-btn').addEventListener('click', async () => {
 // ---------------------------------------------------------------------------
 
 function load() {
-  chrome.storage.local.get(['customTools', 'patientRegex', 'claudeApiKey'], r => {
-    const tools = r.customTools || DEFAULT_TOOLS;
-    const regex = r.patientRegex || DEFAULT_REGEX;
-    const key   = r.claudeApiKey || '';
+  chrome.storage.local.get(['customTools', 'patientRegex', 'claudeApiKey', 'wrenChatModel'], r => {
+    const tools  = r.customTools   || DEFAULT_TOOLS;
+    const regex  = r.patientRegex  || DEFAULT_REGEX;
+    const key    = r.claudeApiKey  || '';
+    const model  = r.wrenChatModel || 'claude-haiku-4-5-20251001';
 
     const tbody = document.getElementById('tool-body');
     tbody.innerHTML = '';
@@ -128,6 +129,7 @@ function load() {
 
     document.getElementById('patient-regex').value = regex;
     document.getElementById('api-key').value        = key;
+    document.getElementById('wren-model').value     = model;
 
     if (key) setKeyStatus('', 'Key saved — click Test to verify');
     else     setKeyStatus('', 'Not configured');
@@ -148,7 +150,8 @@ function save() {
     return;
   }
 
-  const data = { customTools: tools, patientRegex: regex };
+  const model = document.getElementById('wren-model').value;
+  const data  = { customTools: tools, patientRegex: regex, wrenChatModel: model };
   if (key) data.claudeApiKey = key;
   else     data.claudeApiKey = '';
 

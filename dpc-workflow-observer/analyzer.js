@@ -246,6 +246,7 @@ Respond with a JSON array (no markdown, just the raw JSON array) where each item
     headers: {
       'x-api-key': apiKey,
       'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
       'content-type': 'application/json',
     },
     body: JSON.stringify({

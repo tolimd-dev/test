@@ -89,6 +89,7 @@ document.getElementById('test-key-btn').addEventListener('click', async () => {
       headers: {
         'x-api-key': key,
         'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
         'content-type': 'application/json',
       },
       body: JSON.stringify({

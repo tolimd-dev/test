@@ -162,6 +162,7 @@ If you don't have a clear specific pattern yet: NOTHING_YET`;
       headers: {
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
         'content-type': 'application/json',
       },
       body: JSON.stringify({
@@ -199,6 +200,7 @@ async function sendWrenMessage(userMessage, conversationHistory, log, apiKey, mo
     headers: {
       'x-api-key': apiKey,
       'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
       'content-type': 'application/json',
     },
     body: JSON.stringify({
@@ -238,6 +240,7 @@ async function generateFirstContactMessage(log, apiKey, model) {
       headers: {
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
         'content-type': 'application/json',
       },
       body: JSON.stringify({

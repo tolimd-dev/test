@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  color: #1f2937;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Header ── */
+#header {
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fff;
+  flex-shrink: 0;
+}
+#header-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+#title {
+  font-weight: 700;
+  font-size: 14px;
+  flex: 1;
+  color: #1a6b4a;
+}
+#scan-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #d1fae5;
+  border: 1px solid #6ee7b7;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+#scan-dot.scanning { background: #fbbf24; border-color: #f59e0b; }
+#refresh-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+  font-size: 15px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  line-height: 1;
+}
+#refresh-btn:hover { background: #f3f4f6; color: #374151; }
+#scan-status {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+/* ── Scroll area ── */
+#scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 80px; /* space for footer */
+}
+
+/* ── Section headings ── */
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px 5px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+  color: #9ca3af;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 5;
+  border-bottom: 1px solid #f3f4f6;
+}
+.section-head .count-badge {
+  font-size: 10px;
+  background: #f3f4f6;
+  color: #6b7280;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+/* ── Lab row ── */
+.lab-row {
+  padding: 8px 12px 6px;
+  border-bottom: 1px solid #f9fafb;
+  cursor: pointer;
+  user-select: none;
+}
+.lab-row:hover { background: #f9fafb; }
+.lab-row.selected { background: #f0faf5; }
+
+.lab-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.lab-top input[type=checkbox] {
+  margin-top: 2px;
+  accent-color: #1a6b4a;
+  flex-shrink: 0;
+  cursor: pointer;
+  width: 14px; height: 14px;
+}
+.lab-name {
+  flex: 1;
+  font-weight: 500;
+  color: #111827;
+  font-size: 13px;
+  line-height: 1.3;
+}
+.lab-cost {
+  font-size: 12px;
+  color: #6b7280;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.lab-context {
+  margin: 4px 0 2px 22px;
+  font-size: 11px;
+  color: #6b7280;
+  font-style: italic;
+  line-height: 1.4;
+}
+.lab-context mark {
+  background: #fff9c4;
+  font-style: normal;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+/* ── Status badges ── */
+.badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .3px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+.badge-order   { background: #fef3c7; color: #92400e; }
+.badge-done    { background: #d1fae5; color: #065f46; }
+.badge-unclear { background: #f3f4f6; color: #6b7280; }
+
+/* ── Empty state ── */
+.empty {
+  padding: 20px 14px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* ── Manual picker section ── */
+#picker-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #374151;
+  font-weight: 600;
+  border-bottom: 1px solid #f3f4f6;
+  user-select: none;
+}
+#picker-toggle:hover { background: #f9fafb; }
+#picker-arrow { font-size: 10px; color: #9ca3af; transition: transform .2s; }
+#picker-arrow.open { transform: rotate(90deg); }
+
+#picker-panel { display: none; }
+#picker-panel.open { display: block; }
+
+#search-wrap {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f3f4f6;
+}
+#search {
+  width: 100%;
+  padding: 6px 9px;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  font-size: 12px;
+  outline: none;
+}
+#search:focus { border-color: #1a6b4a; box-shadow: 0 0 0 2px rgba(26,107,74,.12); }
+
+#picker-list { list-style: none; }
+#picker-list li {
+  padding: 7px 12px 7px 34px;
+  cursor: pointer;
+  border-bottom: 1px solid #f9fafb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+#picker-list li:hover { background: #f0faf5; }
+#picker-list li.in-note { color: #9ca3af; font-style: italic; }
+#picker-list .p-cost { color: #9ca3af; font-variant-numeric: tabular-nums; }
+#picker-empty { padding: 12px 12px 12px 34px; color: #9ca3af; font-size: 12px; display: none; }
+
+/* ── Sticky footer ── */
+#footer {
+  position: fixed;
+  bottom: 0;
+  left: 0; right: 0;
+  background: #fff;
+  border-top: 2px solid #e5e7eb;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 20;
+}
+#footer-summary {
+  font-size: 12px;
+  color: #374151;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+#footer-total { font-weight: 700; color: #1a6b4a; font-size: 14px; }
+#generate-btn {
+  width: 100%;
+  padding: 9px;
+  background: #1a6b4a;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+#generate-btn:hover { background: #155c3e; }
+#generate-btn:disabled { background: #d1d5db; cursor: not-allowed; }
+
+/* ── Highlight controls ── */
+#hl-bar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 2px;
+}
+.hl-btn {
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  cursor: pointer;
+  background: #f9fafb;
+  color: #374151;
+}
+.hl-btn:hover { background: #f3f4f6; }
+
+/* ── Generating spinner ── */
+#generating {
+  display: none;
+  text-align: center;
+  padding: 6px 0 0;
+  font-size: 11px;
+  color: #9ca3af;
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div id="header">
+  <div id="header-row">
+    <span id="title">Lab Assistant</span>
+    <span id="scan-dot" title="Scan status"></span>
+    <button id="refresh-btn" title="Scan now">↻</button>
+  </div>
+  <div id="scan-status">Loading…</div>
+</div>
+
+<!-- Scrollable content -->
+<div id="scroll">
+
+  <!-- Found in note -->
+  <div class="section-head">
+    Found in note
+    <span id="found-count" class="count-badge">0</span>
+  </div>
+  <div id="found-list"></div>
+
+  <!-- Manual add -->
+  <div id="picker-toggle" onclick="togglePicker()">
+    <span id="picker-arrow">▶</span>
+    <span>Add lab manually</span>
+  </div>
+  <div id="picker-panel">
+    <div id="search-wrap">
+      <input id="search" type="text" placeholder="Search labs…" autocomplete="off"
+             oninput="filterPicker(this.value)" />
+    </div>
+    <ul id="picker-list"></ul>
+    <div id="picker-empty">No labs match.</div>
+  </div>
+
+</div>
+
+<!-- Sticky footer -->
+<div id="footer">
+  <div id="footer-summary">
+    <span id="sel-count">0 labs selected</span>
+    <span id="footer-total">$0.00</span>
+  </div>
+  <div id="hl-bar">
+    <button class="hl-btn" onclick="doHighlight()">Highlight in doc</button>
+    <button class="hl-btn" onclick="doClearHighlights()">Clear</button>
+  </div>
+  <button id="generate-btn" onclick="generateQuote()" disabled>Generate Quote</button>
+  <div id="generating">Creating quote…</div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+
+var allLabs       = [];       // full list from spreadsheet
+var foundLabs     = [];       // labs detected in current scan
+var selectedNames = {};       // { labName: true } — user's selections
+var manualNames   = {};       // { labName: true } — manually added (not in note)
+var scanTimer     = null;
+var scanEpoch     = 0;        // tracks scan version to avoid stale updates
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+
+google.script.run
+  .withSuccessHandler(function(labs) {
+    allLabs = labs;
+    renderPicker(labs);
+    doScan();
+    scanTimer = setInterval(doScan, 9000);
+  })
+  .withFailureHandler(function(err) {
+    setScanStatus('Error: ' + err.message);
+  })
+  .getLabList();
+
+document.getElementById('refresh-btn').addEventListener('click', function() {
+  doScan();
+});
+
+// ── Scanning ──────────────────────────────────────────────────────────────
+
+function doScan() {
+  var epoch = ++scanEpoch;
+  setScanStatus('Scanning…', true);
+  google.script.run
+    .withSuccessHandler(function(results) {
+      if (epoch !== scanEpoch) return;  // stale
+      mergeScanResults(results);
+      renderFound();
+      renderPicker(allLabs);
+      setScanStatus('Last scanned just now', false);
+      setTimeout(function() {
+        if (epoch === scanEpoch) setScanStatus('Last scanned ' + relTime(new Date()) + ' ago', false);
+      }, 5000);
+    })
+    .withFailureHandler(function(err) {
+      setScanStatus('Scan error: ' + err.message, false);
+    })
+    .scanDocumentForLabs();
+}
+
+// Merge new scan results into state without wiping user selections
+function mergeScanResults(results) {
+  var newFoundNames = {};
+  results.forEach(function(lab) {
+    newFoundNames[lab.name] = true;
+    // Auto-check newly discovered "needs ordering" labs
+    if (!(lab.name in selectedNames)) {
+      if (lab.status === 'needs-ordering') selectedNames[lab.name] = true;
+    }
+    // Remove from manual if it's now found in note
+    if (lab.name in manualNames) delete manualNames[lab.name];
+  });
+  // Uncheck labs that were in the last scan but are no longer found
+  // (only if they weren't manually added)
+  foundLabs.forEach(function(old) {
+    if (!(old.name in newFoundNames) && !(old.name in manualNames)) {
+      delete selectedNames[old.name];
+    }
+  });
+  foundLabs = results;
+}
+
+function setScanStatus(msg, scanning) {
+  document.getElementById('scan-status').textContent = msg;
+  document.getElementById('scan-dot').className = scanning ? 'scanning' : '';
+}
+
+// ── Render found labs ─────────────────────────────────────────────────────
+
+function renderFound() {
+  var container = document.getElementById('found-list');
+  var badge     = document.getElementById('found-count');
+  badge.textContent = foundLabs.length;
+
+  if (foundLabs.length === 0) {
+    container.innerHTML = '<div class="empty">No labs from your spreadsheet<br>were found in this note.<br><br>Use "Add lab manually" below<br>or write lab names in your note.</div>';
+    updateFooter();
+    return;
+  }
+
+  // Sort: needs-ordering first, then unclear, then historical
+  var order = { 'needs-ordering': 0, 'unclear': 1, 'historical': 2 };
+  var sorted = foundLabs.slice().sort(function(a, b) {
+    return (order[a.status] || 1) - (order[b.status] || 1);
+  });
+
+  container.innerHTML = sorted.map(function(lab) {
+    return buildLabRow(lab);
+  }).join('');
+
+  // Attach checkbox listeners
+  container.querySelectorAll('input[type=checkbox]').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+      var name = this.dataset.name;
+      if (this.checked) {
+        selectedNames[name] = true;
+      } else {
+        delete selectedNames[name];
+      }
+      var row = this.closest('.lab-row');
+      row.classList.toggle('selected', this.checked);
+      updateFooter();
+    });
+  });
+
+  updateFooter();
+}
+
+function buildLabRow(lab) {
+  var checked  = selectedNames[lab.name] ? 'checked' : '';
+  var selected = selectedNames[lab.name] ? 'selected' : '';
+  var costStr  = lab.cost !== null ? '$' + lab.cost.toFixed(2) : '';
+  var badge    = lab.status === 'needs-ordering'
+    ? '<span class="badge badge-order">order</span>'
+    : lab.status === 'historical'
+    ? '<span class="badge badge-done">historical</span>'
+    : '<span class="badge badge-unclear">?</span>';
+
+  var ctx = '';
+  if (lab.context) {
+    // Bold-highlight the lab name within the context snippet
+    var escaped = lab.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    var highlighted = esc(lab.context).replace(
+      new RegExp(esc(lab.name).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'),
+      function(m) { return '<mark>' + m + '</mark>'; }
+    );
+    ctx = '<div class="lab-context">\u201c' + highlighted + '\u201d</div>';
+  }
+
+  return '<div class="lab-row ' + selected + '" onclick="rowClick(this)">' +
+    '<div class="lab-top">' +
+    '<input type="checkbox" data-name="' + esc(lab.name) + '" data-cost="' + (lab.cost || '') + '" ' + checked + '>' +
+    '<span class="lab-name">' + esc(lab.name) + badge + '</span>' +
+    '<span class="lab-cost">' + costStr + '</span>' +
+    '</div>' +
+    ctx +
+    '</div>';
+}
+
+function rowClick(row) {
+  // Clicking anywhere on the row toggles the checkbox
+  var cb = row.querySelector('input[type=checkbox]');
+  cb.checked = !cb.checked;
+  cb.dispatchEvent(new Event('change'));
+}
+
+// ── Picker (manual add) ───────────────────────────────────────────────────
+
+function togglePicker() {
+  var panel  = document.getElementById('picker-panel');
+  var arrow  = document.getElementById('picker-arrow');
+  var isOpen = panel.classList.contains('open');
+  panel.classList.toggle('open', !isOpen);
+  arrow.classList.toggle('open', !isOpen);
+  if (!isOpen) {
+    document.getElementById('search').focus();
+  }
+}
+
+function filterPicker(q) {
+  var lower = q.toLowerCase();
+  var filtered = allLabs.filter(function(lab) {
+    return !q || lab.name.toLowerCase().indexOf(lower) !== -1 ||
+                 (lab.notes && lab.notes.toLowerCase().indexOf(lower) !== -1);
+  });
+  renderPicker(filtered);
+}
+
+function renderPicker(labs) {
+  var ul    = document.getElementById('picker-list');
+  var empty = document.getElementById('picker-empty');
+  // Exclude labs already found in the note
+  var inNote = {};
+  foundLabs.forEach(function(l) { inNote[l.name] = true; });
+
+  // Show all, but grey out ones already in note
+  var html = labs.map(function(lab) {
+    var costStr = lab.cost !== null ? '$' + Number(lab.cost).toFixed(2) : '';
+    var inN     = inNote[lab.name];
+    var cls     = inN ? ' class="in-note"' : '';
+    var title   = inN ? ' title="Already found in note"' : '';
+    return '<li' + cls + title + ' onclick="pickerClick(this, \'' + esc(lab.name) + '\')" data-cost="' + (lab.cost || '') + '">' +
+      '<span>' + esc(lab.name) + '</span>' +
+      '<span class="p-cost">' + costStr + '</span>' +
+      '</li>';
+  }).join('');
+
+  ul.innerHTML = html;
+  empty.style.display = labs.length === 0 ? 'block' : 'none';
+}
+
+function pickerClick(li, name) {
+  // Toggle selection state for manual labs
+  if (manualNames[name]) {
+    delete manualNames[name];
+    delete selectedNames[name];
+  } else {
+    manualNames[name] = true;
+    selectedNames[name] = true;
+  }
+  updateFooter();
+  // Close picker and re-render
+  document.getElementById('picker-panel').classList.remove('open');
+  document.getElementById('picker-arrow').classList.remove('open');
+  document.getElementById('search').value = '';
+  renderPicker(allLabs);
+  // Re-render found to reflect any status changes
+  renderFound();
+  // Show a brief indicator on the found section that this was added
+  showManualAddedBadge(name);
+}
+
+function showManualAddedBadge(name) {
+  // If name isn't in found, show it as a manual entry in the found list
+  var inFound = foundLabs.some(function(l) { return l.name === name; });
+  if (!inFound && manualNames[name]) {
+    // Add a synthetic "manual" entry to the found list display
+    var lab = allLabs.find(function(l) { return l.name === name; });
+    if (!lab) return;
+    var synth = {
+      name: lab.name, cost: lab.cost, notes: lab.notes, code: lab.code,
+      context: 'Added manually', status: 'unclear'
+    };
+    // Append to found-list
+    var container = document.getElementById('found-list');
+    var emptyDiv  = container.querySelector('.empty');
+    if (emptyDiv) emptyDiv.remove();
+    var div = document.createElement('div');
+    div.innerHTML = buildLabRow(synth);
+    var row = div.firstElementChild;
+    container.appendChild(row);
+    // Bind checkbox
+    var cb = row.querySelector('input[type=checkbox]');
+    if (cb) {
+      cb.checked = true;
+      cb.addEventListener('change', function() {
+        var n = this.dataset.name;
+        if (this.checked) { selectedNames[n] = true; manualNames[n] = true; }
+        else { delete selectedNames[n]; delete manualNames[n]; }
+        row.classList.toggle('selected', this.checked);
+        updateFooter();
+      });
+    }
+    row.addEventListener('click', function(e) {
+      if (e.target.tagName !== 'INPUT') { cb.checked = !cb.checked; cb.dispatchEvent(new Event('change')); }
+    });
+    document.getElementById('found-count').textContent =
+      parseInt(document.getElementById('found-count').textContent || 0) + 1;
+  }
+  updateFooter();
+}
+
+// ── Footer ────────────────────────────────────────────────────────────────
+
+function updateFooter() {
+  var names = Object.keys(selectedNames);
+  var total = 0;
+  names.forEach(function(name) {
+    var lab = allLabs.find(function(l) { return l.name === name; });
+    if (lab && lab.cost !== null) total += lab.cost;
+  });
+  document.getElementById('sel-count').textContent = names.length + ' lab' + (names.length !== 1 ? 's' : '') + ' selected';
+  document.getElementById('footer-total').textContent = '$' + total.toFixed(2);
+  document.getElementById('generate-btn').disabled = names.length === 0;
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────
+
+function generateQuote() {
+  var names = Object.keys(selectedNames);
+  if (!names.length) return;
+  var btn  = document.getElementById('generate-btn');
+  var spin = document.getElementById('generating');
+  btn.disabled = true;
+  spin.style.display = 'block';
+  google.script.run
+    .withSuccessHandler(function(url) {
+      btn.disabled = false;
+      spin.style.display = 'none';
+      // Show a success message with link
+      var msg = document.createElement('div');
+      msg.style.cssText = 'padding:8px 12px;background:#d1fae5;border-radius:5px;font-size:12px;color:#065f46;margin-top:4px;';
+      msg.innerHTML = 'Quote created. <a href="' + url + '" target="_blank" style="color:#065f46;font-weight:700;">Open ↗</a>';
+      document.getElementById('footer').appendChild(msg);
+      setTimeout(function() { if (msg.parentNode) msg.parentNode.removeChild(msg); }, 8000);
+      updateFooter();
+    })
+    .withFailureHandler(function(err) {
+      btn.disabled = false;
+      spin.style.display = 'none';
+      alert('Error: ' + err.message);
+    })
+    .processSelectedLabs(names);
+}
+
+function doHighlight() {
+  var names = foundLabs
+    .filter(function(l) { return l.status === 'needs-ordering' && selectedNames[l.name]; })
+    .map(function(l) { return l.name; });
+  if (!names.length) {
+    names = Object.keys(selectedNames);
+  }
+  google.script.run
+    .withSuccessHandler(function(count) {
+      setScanStatus(count + ' term' + (count !== 1 ? 's' : '') + ' highlighted', false);
+    })
+    .highlightLabsInDoc(names);
+}
+
+function doClearHighlights() {
+  google.script.run
+    .withSuccessHandler(function() { setScanStatus('Highlights cleared', false); })
+    .clearAllHighlights();
+}
+
+// ── Utilities ─────────────────────────────────────────────────────────────
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function relTime(d) {
+  var diff = Math.round((new Date() - d) / 1000);
+  if (diff < 10) return 'just now';
+  if (diff < 60) return diff + 's';
+  return Math.round(diff / 60) + 'm';
+}
+</script>
+</body>
+</html>

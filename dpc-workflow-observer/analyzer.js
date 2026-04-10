@@ -204,9 +204,15 @@ function anonymizeForAI(log) {
   const anonSequences = sequences.map(seq => ({
     patient: anonName(seq[0]?.patient),
     events: seq.map(e => ({
-      tool: e.tool?.name || 'Unknown',
-      category: e.tool?.category || 'unknown',
-      duration: e.duration,
+      tool:      e.tool?.name || 'Unknown',
+      category:  e.tool?.category || 'unknown',
+      duration:  e.duration,
+      // Include sanitized doc context when available (already PHI-free from content script)
+      docContext: e.docContext ? {
+        docType:    e.docContext.docType,
+        headings:   e.docContext.headings,
+        wasEditing: e.docContext.isEditing,
+      } : null,
     })),
   }));
 
@@ -223,9 +229,20 @@ TOOL USAGE:
 ${Object.entries(payload.stats.toolCounts).map(([k,v]) => `  ${k}: ${v} sessions`).join('\n')}
 
 PATIENT CARE SEQUENCES (anonymized — tool chains within 45 min for same patient):
-${payload.sequences.slice(0, 40).map(s =>
-  `  [${s.patient || 'unknown patient'}]: ${s.events.map(e => e.tool).join(' → ')}`
-).join('\n')}
+${payload.sequences.slice(0, 40).map(s => {
+  const steps = s.events.map(e => {
+    if (e.docContext && e.tool === 'Google Docs') {
+      const action = e.docContext.wasEditing ? 'editing' : 'viewing';
+      const type   = e.docContext.docType !== 'unknown' ? ` (${e.docContext.docType.replace(/_/g, ' ')})` : '';
+      const heads  = e.docContext.headings?.length
+        ? ` [${e.docContext.headings.slice(0, 3).join(' / ')}]`
+        : '';
+      return `Google Docs ${action}${type}${heads}`;
+    }
+    return e.tool;
+  });
+  return `  [${s.patient || 'unknown patient'}]: ${steps.join(' → ')}`;
+}).join('\n')}
 
 Based on these real patterns, identify the top 3 automation opportunities I haven't already flagged.
 Focus on the specific friction in DPC workflows: async care, chart lag, multi-tool lookup, and communication-driven clinical work.

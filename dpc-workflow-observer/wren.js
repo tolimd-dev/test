@@ -54,14 +54,33 @@ function buildWorkflowContext(log) {
     if (!e.patient || !e.tool) continue;
     const anon = anonName(e.patient);
     if (!byPatient[anon]) byPatient[anon] = [];
-    byPatient[anon].push({ tool: e.tool.name, category: e.tool.category, date: e.date });
+    byPatient[anon].push({
+      tool:       e.tool.name,
+      category:   e.tool.category,
+      date:       e.date,
+      duration:   e.duration,
+      docContext: e.docContext || null,
+    });
   }
 
   // Find repeated cross-tool sequences per patient
+  // When a Google Docs event has doc context, surface what type of work was happening.
   const sequences = [];
   for (const [anon, events] of Object.entries(byPatient)) {
-    const tools = events.map(e => e.tool);
-    sequences.push(`${anon}: ${tools.join(' → ')}`);
+    const steps = events.map(e => {
+      if (e.docContext && e.tool === 'Google Docs') {
+        const action = e.docContext.isEditing ? 'editing' : 'viewing';
+        const type   = e.docContext.docType && e.docContext.docType !== 'unknown'
+          ? ` (${e.docContext.docType.replace(/_/g, ' ')})`
+          : '';
+        const heads  = e.docContext.headings?.length
+          ? ` [${e.docContext.headings.slice(0, 3).join(' / ')}]`
+          : '';
+        return `Google Docs ${action}${type}${heads}`;
+      }
+      return e.tool;
+    });
+    sequences.push(`${anon}: ${steps.join(' → ')}`);
   }
 
   // Tool frequency ranking

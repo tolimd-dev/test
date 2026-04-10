@@ -80,17 +80,22 @@ let activeStart  = null;
 let activeInfo   = null;
 let lastActivity = Date.now();
 
+// Cache of the latest Google Docs context received from content_gdocs.js, keyed by tab ID.
+// Entries are written by the GDOCS_CONTEXT message handler and cleared on tab close.
+const tabDocContext = {};
+
 async function snapshotTab(tabId) {
   if (tabId == null) return null;
   try {
     const tab    = await chrome.tabs.get(tabId);
     const tools  = await getTools();
     return {
-      url:       tab.url,
-      title:     tab.title,
-      tool:      identifyTool(tab.url, tools),
-      patient:   extractPatient(tab.title),
-      startTime: new Date().toISOString(),
+      url:        tab.url,
+      title:      tab.title,
+      tool:       identifyTool(tab.url, tools),
+      patient:    extractPatient(tab.title),
+      docContext: tabDocContext[tabId] || null,
+      startTime:  new Date().toISOString(),
     };
   } catch { return null; }
 }
@@ -101,16 +106,17 @@ async function flushActive(endTime) {
   if (duration < MIN_DURATION_MS) return;
 
   await logActivity({
-    id:        `${activeStart}-${Math.random().toString(36).slice(2,7)}`,
-    startTime: activeInfo.startTime,
-    endTime:   new Date(endTime || Date.now()).toISOString(),
-    duration:  Math.round(duration / 1000),
-    url:       activeInfo.url,
-    title:     activeInfo.title,
-    tool:      activeInfo.tool,
-    patient:   activeInfo.patient,
-    date:      todayStr(),
-    note:      null,
+    id:         `${activeStart}-${Math.random().toString(36).slice(2,7)}`,
+    startTime:  activeInfo.startTime,
+    endTime:    new Date(endTime || Date.now()).toISOString(),
+    duration:   Math.round(duration / 1000),
+    url:        activeInfo.url,
+    title:      activeInfo.title,
+    tool:       activeInfo.tool,
+    patient:    activeInfo.patient,
+    docContext: activeInfo.docContext || null,
+    date:       todayStr(),
+    note:       null,
   });
 
   lastActivity = Date.now();
@@ -146,6 +152,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
 });
 
 chrome.tabs.onRemoved.addListener(async (tabId) => {
+  delete tabDocContext[tabId];
   if (tabId !== activeTabId) return;
   await flushActive();
   activeTabId = null; activeStart = null; activeInfo = null;
@@ -240,6 +247,20 @@ async function triggerWrenObservation(log, apiKey) {
 // ---------------------------------------------------------------------------
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+
+  if (msg.type === 'GDOCS_CONTEXT') {
+    // Incoming from content_gdocs.js — already sanitized (no PHI).
+    // Cache it so the next snapshotTab() picks it up.
+    if (_sender.tab?.id) {
+      tabDocContext[_sender.tab.id] = msg.context;
+      // If this tab is currently active, refresh activeInfo with the new context
+      if (_sender.tab.id === activeTabId && activeInfo) {
+        activeInfo.docContext = msg.context;
+      }
+    }
+    sendResponse({ ok: true });
+    return true;
+  }
 
   if (msg.type === 'GET_CURRENT') {
     sendResponse({ tool: activeInfo?.tool ?? null, patient: activeInfo?.patient ?? null, title: activeInfo?.title ?? null });

@@ -337,8 +337,15 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         return;
       }
 
+      // Sanitized live snapshot of what's on screen right now (no real patient name sent)
+      const currentSnapshot = activeInfo?.tool ? {
+        tool:       activeInfo.tool,
+        hasPatient: !!activeInfo.patient,
+        docContext: activeInfo.docContext || null,
+      } : null;
+
       try {
-        const reply = await sendWrenMessage(msg.message, history, log, apiKey, model);
+        const reply = await sendWrenMessage(msg.message, history, log, apiKey, model, currentSnapshot);
 
         const updated = [...(r.wrenConversation || [])];
         updated.push({ role: 'user',      content: msg.message, timestamp: new Date().toISOString() });
@@ -372,8 +379,14 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         return;
       }
 
+      const currentSnapshot = activeInfo?.tool ? {
+        tool:       activeInfo.tool,
+        hasPatient: !!activeInfo.patient,
+        docContext: activeInfo.docContext || null,
+      } : null;
+
       try {
-        const reply = await generateFirstContactMessage(log, apiKey, model);
+        const reply = await generateFirstContactMessage(log, apiKey, model, currentSnapshot);
         if (!reply) { sendResponse({ reply: null }); return; }
 
         const history = [...(r.wrenConversation || [])];

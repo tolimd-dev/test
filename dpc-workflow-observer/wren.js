@@ -104,7 +104,17 @@ function buildWorkflowContext(log) {
 // System prompt
 // ---------------------------------------------------------------------------
 
-function buildSystemPrompt(ctx) {
+function buildSystemPrompt(ctx, currentSnapshot = null) {
+  // What's open on screen right now (sanitized — no patient name sent)
+  const currentBlock = (currentSnapshot?.tool) ? `
+WHAT'S ON SCREEN RIGHT NOW:
+- Tool open: ${currentSnapshot.tool.name} (${currentSnapshot.tool.category})${currentSnapshot.docContext ? `
+- Document type: ${currentSnapshot.docContext.docType.replace(/_/g, ' ')}
+- Sections visible: ${currentSnapshot.docContext.headings?.length ? currentSnapshot.docContext.headings.join(', ') : 'none detected (outline panel may be closed)'}
+- Actively editing: ${currentSnapshot.docContext.isEditing ? 'yes' : 'no'}` : `
+- No document context yet (still loading or outline panel closed)`}
+` : '';
+
   const contextBlock = ctx ? `
 WHAT YOU'VE OBSERVED SO FAR (anonymized — no real patient names):
 - Days watched: ${ctx.daysObserved}
@@ -130,7 +140,7 @@ This is a Direct Primary Care (DPC) clinic — relationship-based, subscription 
 
 TOOL STACK:
 Google Docs (patient charts), Gmail, Google Drive, Spruce (moving to for messaging), Google Voice (calls/texts), CPL Labs portal (lab orders), Envision (imaging orders), Doximity (faxing), Calendly (scheduling), iPrescribe (prescriptions), Square (billing), Google Sheets (references, lab prices, tracking).
-${contextBlock}
+${currentBlock}${contextBlock}
 YOUR APPROACH:
 - You are a colleague and thought partner, not an assistant. You have opinions.
 - Ask before you assume. When something seems like a friction point, check your read of it first.
@@ -206,9 +216,9 @@ If you don't have a clear specific pattern yet: NOTHING_YET`;
 // Chat message sender
 // ---------------------------------------------------------------------------
 
-async function sendWrenMessage(userMessage, conversationHistory, log, apiKey, model) {
+async function sendWrenMessage(userMessage, conversationHistory, log, apiKey, model, currentSnapshot = null) {
   const ctx      = buildWorkflowContext(log);
-  const system   = buildSystemPrompt(ctx);
+  const system   = buildSystemPrompt(ctx, currentSnapshot);
   const messages = [
     ...conversationHistory,
     { role: 'user', content: userMessage },
@@ -246,7 +256,7 @@ async function sendWrenMessage(userMessage, conversationHistory, log, apiKey, mo
 // Called when the user opens the Wren chat for the very first time.
 // ---------------------------------------------------------------------------
 
-async function generateFirstContactMessage(log, apiKey, model) {
+async function generateFirstContactMessage(log, apiKey, model, currentSnapshot = null) {
   const ctx = buildWorkflowContext(log);
 
   const prompt = ctx && ctx.totalEvents >= 4
@@ -265,7 +275,7 @@ async function generateFirstContactMessage(log, apiKey, model) {
       body: JSON.stringify({
         model: model || WREN_MODELS.chat,
         max_tokens: 200,
-        system: buildSystemPrompt(ctx),
+        system: buildSystemPrompt(ctx, currentSnapshot),
         messages: [{ role: 'user', content: prompt }],
       }),
     });

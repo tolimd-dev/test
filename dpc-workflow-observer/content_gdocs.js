@@ -103,6 +103,7 @@
   }
 
   // -------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
   // Build and send sanitized context to the background service worker
   // -------------------------------------------------------------------------
   function sendContext() {
@@ -112,12 +113,16 @@
 
     const context = { headings: safeHeadings, docType, isEditing };
 
+    console.log('[Wren] doc context:', context);
+
     // Only send when something actually changed (avoids unnecessary traffic)
     const hash = JSON.stringify(context);
     if (hash === lastSentHash) return;
     lastSentHash = hash;
 
-    chrome.runtime.sendMessage({ type: 'GDOCS_CONTEXT', context }).catch(() => {});
+    chrome.runtime.sendMessage({ type: 'GDOCS_CONTEXT', context })
+      .then(() => console.log('[Wren] context sent to background'))
+      .catch(err => console.warn('[Wren] failed to send context:', err));
   }
 
   // Initial extraction after the page settles (outline panel may load lazily)

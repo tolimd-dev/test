@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../lib/generated/prisma"
@@ -25,27 +20,48 @@ model User {
 }
 
 model Event {
+  id             String         @id @default(cuid())
+  title          String
+  description    String
+  menu           String
+  basePrice      Float
+  pricePerPerson Float
+  maxGuests      Int
+  durationMins   Int            @default(180)
+  hostId         String
+  host           User           @relation(fields: [hostId], references: [id])
+  availability   Availability[]
+  sessions       EventSession[]
+  createdAt      DateTime       @default(now())
+}
+
+model Availability {
+  id        String @id @default(cuid())
+  eventId   String
+  event     Event  @relation(fields: [eventId], references: [id])
+  dayOfWeek Int
+  startTime String
+}
+
+model EventSession {
   id           String        @id @default(cuid())
-  title        String
-  description  String
-  menu         String
-  price        Float
+  eventId      String
+  event        Event         @relation(fields: [eventId], references: [id])
   date         DateTime
-  maxGuests    Int
-  hostId       String
-  host         User          @relation(fields: [hostId], references: [id])
   reservations Reservation[]
   createdAt    DateTime      @default(now())
+
+  @@unique([eventId, date])
 }
 
 model Reservation {
-  id        String   @id @default(cuid())
-  eventId   String
-  event     Event    @relation(fields: [eventId], references: [id])
+  id        String       @id @default(cuid())
+  sessionId String
+  session   EventSession @relation(fields: [sessionId], references: [id])
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  guests    Int      @default(1)
-  createdAt DateTime @default(now())
+  user      User         @relation(fields: [userId], references: [id])
+  guests    Int          @default(1)
+  createdAt DateTime     @default(now())
 
-  @@unique([eventId, userId])
+  @@unique([sessionId, userId])
 }

@@ -53,6 +53,8 @@ export const AnyNull = runtime.AnyNull
 export const ModelName = {
   User: 'User',
   Event: 'Event',
+  Availability: 'Availability',
+  EventSession: 'EventSession',
   Reservation: 'Reservation'
 } as const
 
@@ -87,9 +89,10 @@ export const EventScalarFieldEnum = {
   title: 'title',
   description: 'description',
   menu: 'menu',
-  price: 'price',
-  date: 'date',
+  basePrice: 'basePrice',
+  pricePerPerson: 'pricePerPerson',
   maxGuests: 'maxGuests',
+  durationMins: 'durationMins',
   hostId: 'hostId',
   createdAt: 'createdAt'
 } as const
@@ -97,9 +100,29 @@ export const EventScalarFieldEnum = {
 export type EventScalarFieldEnum = (typeof EventScalarFieldEnum)[keyof typeof EventScalarFieldEnum]
 
 
-export const ReservationScalarFieldEnum = {
+export const AvailabilityScalarFieldEnum = {
   id: 'id',
   eventId: 'eventId',
+  dayOfWeek: 'dayOfWeek',
+  startTime: 'startTime'
+} as const
+
+export type AvailabilityScalarFieldEnum = (typeof AvailabilityScalarFieldEnum)[keyof typeof AvailabilityScalarFieldEnum]
+
+
+export const EventSessionScalarFieldEnum = {
+  id: 'id',
+  eventId: 'eventId',
+  date: 'date',
+  createdAt: 'createdAt'
+} as const
+
+export type EventSessionScalarFieldEnum = (typeof EventSessionScalarFieldEnum)[keyof typeof EventSessionScalarFieldEnum]
+
+
+export const ReservationScalarFieldEnum = {
+  id: 'id',
+  sessionId: 'sessionId',
   userId: 'userId',
   guests: 'guests',
   createdAt: 'createdAt'

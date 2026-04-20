@@ -52,6 +52,16 @@ export type User = Prisma.UserModel
  */
 export type Event = Prisma.EventModel
 /**
+ * Model Availability
+ * 
+ */
+export type Availability = Prisma.AvailabilityModel
+/**
+ * Model EventSession
+ * 
+ */
+export type EventSession = Prisma.EventSessionModel
+/**
  * Model Reservation
  * 
  */

@@ -9,11 +9,7 @@ export type ReserveState = {
   success?: boolean
 } | undefined
 
-export async function createReservation(
-  eventId: string,
-  state: ReserveState,
-  formData: FormData
-): Promise<ReserveState> {
+export async function createReservation(state: ReserveState, formData: FormData): Promise<ReserveState> {
   const session = await auth()
   if (!session?.user) return { message: "Please sign in to make a reservation." }
   if ((session.user as { role?: string }).role === "HOST") {
@@ -21,32 +17,45 @@ export async function createReservation(
   }
 
   const userId = (session.user as { id?: string }).id!
-  const guestsStr = formData.get("guests") as string
-  const guests = parseInt(guestsStr) || 1
+  const eventId = formData.get("eventId") as string
+  const dateTimeStr = formData.get("dateTime") as string
+  const guests = parseInt(formData.get("guests") as string) || 1
 
-  const event = await prisma.event.findUnique({
-    where: { id: eventId },
-    include: { _count: { select: { reservations: true } } },
-  })
+  if (!eventId || !dateTimeStr) return { message: "Invalid booking details." }
 
+  const event = await prisma.event.findUnique({ where: { id: eventId } })
   if (!event) return { message: "Event not found." }
 
-  const totalReserved = await prisma.reservation.aggregate({
-    where: { eventId },
-    _sum: { guests: true },
+  const date = new Date(dateTimeStr)
+
+  // Find or create session for this timeslot
+  let eventSession = await prisma.eventSession.findUnique({
+    where: { eventId_date: { eventId, date } },
   })
 
-  const spotsLeft = event.maxGuests - (totalReserved._sum.guests ?? 0)
-  if (guests > spotsLeft) {
-    return { message: `Only ${spotsLeft} spot(s) remaining.` }
+  if (!eventSession) {
+    eventSession = await prisma.eventSession.create({
+      data: { eventId, date },
+    })
   }
 
-  const existing = await prisma.reservation.findUnique({
-    where: { eventId_userId: { eventId, userId } },
+  // Check spots
+  const booked = await prisma.reservation.aggregate({
+    where: { sessionId: eventSession.id },
+    _sum: { guests: true },
   })
-  if (existing) return { message: "You already have a reservation for this event." }
+  const spotsLeft = event.maxGuests - (booked._sum.guests ?? 0)
 
-  await prisma.reservation.create({ data: { eventId, userId, guests } })
+  if (guests > spotsLeft) return { message: `Only ${spotsLeft} spot(s) remaining.` }
+
+  const existing = await prisma.reservation.findUnique({
+    where: { sessionId_userId: { sessionId: eventSession.id, userId } },
+  })
+  if (existing) return { message: "You already have a reservation for this time slot." }
+
+  await prisma.reservation.create({
+    data: { sessionId: eventSession.id, userId, guests },
+  })
 
   revalidatePath(`/events/${eventId}`)
   revalidatePath("/patron/reservations")

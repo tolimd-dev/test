@@ -10,5 +10,7 @@
  */
 export type * from './models/User'
 export type * from './models/Event'
+export type * from './models/Availability'
+export type * from './models/EventSession'
 export type * from './models/Reservation'
 export type * from './commonInputTypes'

@@ -36,7 +36,7 @@ export type ReservationSumAggregateOutputType = {
 
 export type ReservationMinAggregateOutputType = {
   id: string | null
-  eventId: string | null
+  sessionId: string | null
   userId: string | null
   guests: number | null
   createdAt: Date | null
@@ -44,7 +44,7 @@ export type ReservationMinAggregateOutputType = {
 
 export type ReservationMaxAggregateOutputType = {
   id: string | null
-  eventId: string | null
+  sessionId: string | null
   userId: string | null
   guests: number | null
   createdAt: Date | null
@@ -52,7 +52,7 @@ export type ReservationMaxAggregateOutputType = {
 
 export type ReservationCountAggregateOutputType = {
   id: number
-  eventId: number
+  sessionId: number
   userId: number
   guests: number
   createdAt: number
@@ -70,7 +70,7 @@ export type ReservationSumAggregateInputType = {
 
 export type ReservationMinAggregateInputType = {
   id?: true
-  eventId?: true
+  sessionId?: true
   userId?: true
   guests?: true
   createdAt?: true
@@ -78,7 +78,7 @@ export type ReservationMinAggregateInputType = {
 
 export type ReservationMaxAggregateInputType = {
   id?: true
-  eventId?: true
+  sessionId?: true
   userId?: true
   guests?: true
   createdAt?: true
@@ -86,7 +86,7 @@ export type ReservationMaxAggregateInputType = {
 
 export type ReservationCountAggregateInputType = {
   id?: true
-  eventId?: true
+  sessionId?: true
   userId?: true
   guests?: true
   createdAt?: true
@@ -181,7 +181,7 @@ export type ReservationGroupByArgs<ExtArgs extends runtime.Types.Extensions.Inte
 
 export type ReservationGroupByOutputType = {
   id: string
-  eventId: string
+  sessionId: string
   userId: string
   guests: number
   createdAt: Date
@@ -212,41 +212,41 @@ export type ReservationWhereInput = {
   OR?: Prisma.ReservationWhereInput[]
   NOT?: Prisma.ReservationWhereInput | Prisma.ReservationWhereInput[]
   id?: Prisma.StringFilter<"Reservation"> | string
-  eventId?: Prisma.StringFilter<"Reservation"> | string
+  sessionId?: Prisma.StringFilter<"Reservation"> | string
   userId?: Prisma.StringFilter<"Reservation"> | string
   guests?: Prisma.IntFilter<"Reservation"> | number
   createdAt?: Prisma.DateTimeFilter<"Reservation"> | Date | string
-  event?: Prisma.XOR<Prisma.EventScalarRelationFilter, Prisma.EventWhereInput>
+  session?: Prisma.XOR<Prisma.EventSessionScalarRelationFilter, Prisma.EventSessionWhereInput>
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
 }
 
 export type ReservationOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  eventId?: Prisma.SortOrder
+  sessionId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   guests?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
-  event?: Prisma.EventOrderByWithRelationInput
+  session?: Prisma.EventSessionOrderByWithRelationInput
   user?: Prisma.UserOrderByWithRelationInput
 }
 
 export type ReservationWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  eventId_userId?: Prisma.ReservationEventIdUserIdCompoundUniqueInput
+  sessionId_userId?: Prisma.ReservationSessionIdUserIdCompoundUniqueInput
   AND?: Prisma.ReservationWhereInput | Prisma.ReservationWhereInput[]
   OR?: Prisma.ReservationWhereInput[]
   NOT?: Prisma.ReservationWhereInput | Prisma.ReservationWhereInput[]
-  eventId?: Prisma.StringFilter<"Reservation"> | string
+  sessionId?: Prisma.StringFilter<"Reservation"> | string
   userId?: Prisma.StringFilter<"Reservation"> | string
   guests?: Prisma.IntFilter<"Reservation"> | number
   createdAt?: Prisma.DateTimeFilter<"Reservation"> | Date | string
-  event?: Prisma.XOR<Prisma.EventScalarRelationFilter, Prisma.EventWhereInput>
+  session?: Prisma.XOR<Prisma.EventSessionScalarRelationFilter, Prisma.EventSessionWhereInput>
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
-}, "id" | "eventId_userId">
+}, "id" | "sessionId_userId">
 
 export type ReservationOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  eventId?: Prisma.SortOrder
+  sessionId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   guests?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -262,7 +262,7 @@ export type ReservationScalarWhereWithAggregatesInput = {
   OR?: Prisma.ReservationScalarWhereWithAggregatesInput[]
   NOT?: Prisma.ReservationScalarWhereWithAggregatesInput | Prisma.ReservationScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Reservation"> | string
-  eventId?: Prisma.StringWithAggregatesFilter<"Reservation"> | string
+  sessionId?: Prisma.StringWithAggregatesFilter<"Reservation"> | string
   userId?: Prisma.StringWithAggregatesFilter<"Reservation"> | string
   guests?: Prisma.IntWithAggregatesFilter<"Reservation"> | number
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Reservation"> | Date | string
@@ -272,13 +272,13 @@ export type ReservationCreateInput = {
   id?: string
   guests?: number
   createdAt?: Date | string
-  event: Prisma.EventCreateNestedOneWithoutReservationsInput
+  session: Prisma.EventSessionCreateNestedOneWithoutReservationsInput
   user: Prisma.UserCreateNestedOneWithoutReservationsInput
 }
 
 export type ReservationUncheckedCreateInput = {
   id?: string
-  eventId: string
+  sessionId: string
   userId: string
   guests?: number
   createdAt?: Date | string
@@ -288,13 +288,13 @@ export type ReservationUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   guests?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  event?: Prisma.EventUpdateOneRequiredWithoutReservationsNestedInput
+  session?: Prisma.EventSessionUpdateOneRequiredWithoutReservationsNestedInput
   user?: Prisma.UserUpdateOneRequiredWithoutReservationsNestedInput
 }
 
 export type ReservationUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  eventId?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   guests?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -302,7 +302,7 @@ export type ReservationUncheckedUpdateInput = {
 
 export type ReservationCreateManyInput = {
   id?: string
-  eventId: string
+  sessionId: string
   userId: string
   guests?: number
   createdAt?: Date | string
@@ -316,7 +316,7 @@ export type ReservationUpdateManyMutationInput = {
 
 export type ReservationUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  eventId?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   guests?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -332,14 +332,14 @@ export type ReservationOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
-export type ReservationEventIdUserIdCompoundUniqueInput = {
-  eventId: string
+export type ReservationSessionIdUserIdCompoundUniqueInput = {
+  sessionId: string
   userId: string
 }
 
 export type ReservationCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  eventId?: Prisma.SortOrder
+  sessionId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   guests?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -351,7 +351,7 @@ export type ReservationAvgOrderByAggregateInput = {
 
 export type ReservationMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  eventId?: Prisma.SortOrder
+  sessionId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   guests?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -359,7 +359,7 @@ export type ReservationMaxOrderByAggregateInput = {
 
 export type ReservationMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  eventId?: Prisma.SortOrder
+  sessionId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   guests?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -411,45 +411,45 @@ export type ReservationUncheckedUpdateManyWithoutUserNestedInput = {
   deleteMany?: Prisma.ReservationScalarWhereInput | Prisma.ReservationScalarWhereInput[]
 }
 
-export type ReservationCreateNestedManyWithoutEventInput = {
-  create?: Prisma.XOR<Prisma.ReservationCreateWithoutEventInput, Prisma.ReservationUncheckedCreateWithoutEventInput> | Prisma.ReservationCreateWithoutEventInput[] | Prisma.ReservationUncheckedCreateWithoutEventInput[]
-  connectOrCreate?: Prisma.ReservationCreateOrConnectWithoutEventInput | Prisma.ReservationCreateOrConnectWithoutEventInput[]
-  createMany?: Prisma.ReservationCreateManyEventInputEnvelope
+export type ReservationCreateNestedManyWithoutSessionInput = {
+  create?: Prisma.XOR<Prisma.ReservationCreateWithoutSessionInput, Prisma.ReservationUncheckedCreateWithoutSessionInput> | Prisma.ReservationCreateWithoutSessionInput[] | Prisma.ReservationUncheckedCreateWithoutSessionInput[]
+  connectOrCreate?: Prisma.ReservationCreateOrConnectWithoutSessionInput | Prisma.ReservationCreateOrConnectWithoutSessionInput[]
+  createMany?: Prisma.ReservationCreateManySessionInputEnvelope
   connect?: Prisma.ReservationWhereUniqueInput | Prisma.ReservationWhereUniqueInput[]
 }
 
-export type ReservationUncheckedCreateNestedManyWithoutEventInput = {
-  create?: Prisma.XOR<Prisma.ReservationCreateWithoutEventInput, Prisma.ReservationUncheckedCreateWithoutEventInput> | Prisma.ReservationCreateWithoutEventInput[] | Prisma.ReservationUncheckedCreateWithoutEventInput[]
-  connectOrCreate?: Prisma.ReservationCreateOrConnectWithoutEventInput | Prisma.ReservationCreateOrConnectWithoutEventInput[]
-  createMany?: Prisma.ReservationCreateManyEventInputEnvelope
+export type ReservationUncheckedCreateNestedManyWithoutSessionInput = {
+  create?: Prisma.XOR<Prisma.ReservationCreateWithoutSessionInput, Prisma.ReservationUncheckedCreateWithoutSessionInput> | Prisma.ReservationCreateWithoutSessionInput[] | Prisma.ReservationUncheckedCreateWithoutSessionInput[]
+  connectOrCreate?: Prisma.ReservationCreateOrConnectWithoutSessionInput | Prisma.ReservationCreateOrConnectWithoutSessionInput[]
+  createMany?: Prisma.ReservationCreateManySessionInputEnvelope
   connect?: Prisma.ReservationWhereUniqueInput | Prisma.ReservationWhereUniqueInput[]
 }
 
-export type ReservationUpdateManyWithoutEventNestedInput = {
-  create?: Prisma.XOR<Prisma.ReservationCreateWithoutEventInput, Prisma.ReservationUncheckedCreateWithoutEventInput> | Prisma.ReservationCreateWithoutEventInput[] | Prisma.ReservationUncheckedCreateWithoutEventInput[]
-  connectOrCreate?: Prisma.ReservationCreateOrConnectWithoutEventInput | Prisma.ReservationCreateOrConnectWithoutEventInput[]
-  upsert?: Prisma.ReservationUpsertWithWhereUniqueWithoutEventInput | Prisma.ReservationUpsertWithWhereUniqueWithoutEventInput[]
-  createMany?: Prisma.ReservationCreateManyEventInputEnvelope
+export type ReservationUpdateManyWithoutSessionNestedInput = {
+  create?: Prisma.XOR<Prisma.ReservationCreateWithoutSessionInput, Prisma.ReservationUncheckedCreateWithoutSessionInput> | Prisma.ReservationCreateWithoutSessionInput[] | Prisma.ReservationUncheckedCreateWithoutSessionInput[]
+  connectOrCreate?: Prisma.ReservationCreateOrConnectWithoutSessionInput | Prisma.ReservationCreateOrConnectWithoutSessionInput[]
+  upsert?: Prisma.ReservationUpsertWithWhereUniqueWithoutSessionInput | Prisma.ReservationUpsertWithWhereUniqueWithoutSessionInput[]
+  createMany?: Prisma.ReservationCreateManySessionInputEnvelope
   set?: Prisma.ReservationWhereUniqueInput | Prisma.ReservationWhereUniqueInput[]
   disconnect?: Prisma.ReservationWhereUniqueInput | Prisma.ReservationWhereUniqueInput[]
   delete?: Prisma.ReservationWhereUniqueInput | Prisma.ReservationWhereUniqueInput[]
   connect?: Prisma.ReservationWhereUniqueInput | Prisma.ReservationWhereUniqueInput[]
-  update?: Prisma.ReservationUpdateWithWhereUniqueWithoutEventInput | Prisma.ReservationUpdateWithWhereUniqueWithoutEventInput[]
-  updateMany?: Prisma.ReservationUpdateManyWithWhereWithoutEventInput | Prisma.ReservationUpdateManyWithWhereWithoutEventInput[]
+  update?: Prisma.ReservationUpdateWithWhereUniqueWithoutSessionInput | Prisma.ReservationUpdateWithWhereUniqueWithoutSessionInput[]
+  updateMany?: Prisma.ReservationUpdateManyWithWhereWithoutSessionInput | Prisma.ReservationUpdateManyWithWhereWithoutSessionInput[]
   deleteMany?: Prisma.ReservationScalarWhereInput | Prisma.ReservationScalarWhereInput[]
 }
 
-export type ReservationUncheckedUpdateManyWithoutEventNestedInput = {
-  create?: Prisma.XOR<Prisma.ReservationCreateWithoutEventInput, Prisma.ReservationUncheckedCreateWithoutEventInput> | Prisma.ReservationCreateWithoutEventInput[] | Prisma.ReservationUncheckedCreateWithoutEventInput[]
-  connectOrCreate?: Prisma.ReservationCreateOrConnectWithoutEventInput | Prisma.ReservationCreateOrConnectWithoutEventInput[]
-  upsert?: Prisma.ReservationUpsertWithWhereUniqueWithoutEventInput | Prisma.ReservationUpsertWithWhereUniqueWithoutEventInput[]
-  createMany?: Prisma.ReservationCreateManyEventInputEnvelope
+export type ReservationUncheckedUpdateManyWithoutSessionNestedInput = {
+  create?: Prisma.XOR<Prisma.ReservationCreateWithoutSessionInput, Prisma.ReservationUncheckedCreateWithoutSessionInput> | Prisma.ReservationCreateWithoutSessionInput[] | Prisma.ReservationUncheckedCreateWithoutSessionInput[]
+  connectOrCreate?: Prisma.ReservationCreateOrConnectWithoutSessionInput | Prisma.ReservationCreateOrConnectWithoutSessionInput[]
+  upsert?: Prisma.ReservationUpsertWithWhereUniqueWithoutSessionInput | Prisma.ReservationUpsertWithWhereUniqueWithoutSessionInput[]
+  createMany?: Prisma.ReservationCreateManySessionInputEnvelope
   set?: Prisma.ReservationWhereUniqueInput | Prisma.ReservationWhereUniqueInput[]
   disconnect?: Prisma.ReservationWhereUniqueInput | Prisma.ReservationWhereUniqueInput[]
   delete?: Prisma.ReservationWhereUniqueInput | Prisma.ReservationWhereUniqueInput[]
   connect?: Prisma.ReservationWhereUniqueInput | Prisma.ReservationWhereUniqueInput[]
-  update?: Prisma.ReservationUpdateWithWhereUniqueWithoutEventInput | Prisma.ReservationUpdateWithWhereUniqueWithoutEventInput[]
-  updateMany?: Prisma.ReservationUpdateManyWithWhereWithoutEventInput | Prisma.ReservationUpdateManyWithWhereWithoutEventInput[]
+  update?: Prisma.ReservationUpdateWithWhereUniqueWithoutSessionInput | Prisma.ReservationUpdateWithWhereUniqueWithoutSessionInput[]
+  updateMany?: Prisma.ReservationUpdateManyWithWhereWithoutSessionInput | Prisma.ReservationUpdateManyWithWhereWithoutSessionInput[]
   deleteMany?: Prisma.ReservationScalarWhereInput | Prisma.ReservationScalarWhereInput[]
 }
 
@@ -457,12 +457,12 @@ export type ReservationCreateWithoutUserInput = {
   id?: string
   guests?: number
   createdAt?: Date | string
-  event: Prisma.EventCreateNestedOneWithoutReservationsInput
+  session: Prisma.EventSessionCreateNestedOneWithoutReservationsInput
 }
 
 export type ReservationUncheckedCreateWithoutUserInput = {
   id?: string
-  eventId: string
+  sessionId: string
   guests?: number
   createdAt?: Date | string
 }
@@ -497,54 +497,54 @@ export type ReservationScalarWhereInput = {
   OR?: Prisma.ReservationScalarWhereInput[]
   NOT?: Prisma.ReservationScalarWhereInput | Prisma.ReservationScalarWhereInput[]
   id?: Prisma.StringFilter<"Reservation"> | string
-  eventId?: Prisma.StringFilter<"Reservation"> | string
+  sessionId?: Prisma.StringFilter<"Reservation"> | string
   userId?: Prisma.StringFilter<"Reservation"> | string
   guests?: Prisma.IntFilter<"Reservation"> | number
   createdAt?: Prisma.DateTimeFilter<"Reservation"> | Date | string
 }
 
-export type ReservationCreateWithoutEventInput = {
+export type ReservationCreateWithoutSessionInput = {
   id?: string
   guests?: number
   createdAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutReservationsInput
 }
 
-export type ReservationUncheckedCreateWithoutEventInput = {
+export type ReservationUncheckedCreateWithoutSessionInput = {
   id?: string
   userId: string
   guests?: number
   createdAt?: Date | string
 }
 
-export type ReservationCreateOrConnectWithoutEventInput = {
+export type ReservationCreateOrConnectWithoutSessionInput = {
   where: Prisma.ReservationWhereUniqueInput
-  create: Prisma.XOR<Prisma.ReservationCreateWithoutEventInput, Prisma.ReservationUncheckedCreateWithoutEventInput>
+  create: Prisma.XOR<Prisma.ReservationCreateWithoutSessionInput, Prisma.ReservationUncheckedCreateWithoutSessionInput>
 }
 
-export type ReservationCreateManyEventInputEnvelope = {
-  data: Prisma.ReservationCreateManyEventInput | Prisma.ReservationCreateManyEventInput[]
+export type ReservationCreateManySessionInputEnvelope = {
+  data: Prisma.ReservationCreateManySessionInput | Prisma.ReservationCreateManySessionInput[]
 }
 
-export type ReservationUpsertWithWhereUniqueWithoutEventInput = {
+export type ReservationUpsertWithWhereUniqueWithoutSessionInput = {
   where: Prisma.ReservationWhereUniqueInput
-  update: Prisma.XOR<Prisma.ReservationUpdateWithoutEventInput, Prisma.ReservationUncheckedUpdateWithoutEventInput>
-  create: Prisma.XOR<Prisma.ReservationCreateWithoutEventInput, Prisma.ReservationUncheckedCreateWithoutEventInput>
+  update: Prisma.XOR<Prisma.ReservationUpdateWithoutSessionInput, Prisma.ReservationUncheckedUpdateWithoutSessionInput>
+  create: Prisma.XOR<Prisma.ReservationCreateWithoutSessionInput, Prisma.ReservationUncheckedCreateWithoutSessionInput>
 }
 
-export type ReservationUpdateWithWhereUniqueWithoutEventInput = {
+export type ReservationUpdateWithWhereUniqueWithoutSessionInput = {
   where: Prisma.ReservationWhereUniqueInput
-  data: Prisma.XOR<Prisma.ReservationUpdateWithoutEventInput, Prisma.ReservationUncheckedUpdateWithoutEventInput>
+  data: Prisma.XOR<Prisma.ReservationUpdateWithoutSessionInput, Prisma.ReservationUncheckedUpdateWithoutSessionInput>
 }
 
-export type ReservationUpdateManyWithWhereWithoutEventInput = {
+export type ReservationUpdateManyWithWhereWithoutSessionInput = {
   where: Prisma.ReservationScalarWhereInput
-  data: Prisma.XOR<Prisma.ReservationUpdateManyMutationInput, Prisma.ReservationUncheckedUpdateManyWithoutEventInput>
+  data: Prisma.XOR<Prisma.ReservationUpdateManyMutationInput, Prisma.ReservationUncheckedUpdateManyWithoutSessionInput>
 }
 
 export type ReservationCreateManyUserInput = {
   id?: string
-  eventId: string
+  sessionId: string
   guests?: number
   createdAt?: Date | string
 }
@@ -553,45 +553,45 @@ export type ReservationUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   guests?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  event?: Prisma.EventUpdateOneRequiredWithoutReservationsNestedInput
+  session?: Prisma.EventSessionUpdateOneRequiredWithoutReservationsNestedInput
 }
 
 export type ReservationUncheckedUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  eventId?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.StringFieldUpdateOperationsInput | string
   guests?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type ReservationUncheckedUpdateManyWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  eventId?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.StringFieldUpdateOperationsInput | string
   guests?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type ReservationCreateManyEventInput = {
+export type ReservationCreateManySessionInput = {
   id?: string
   userId: string
   guests?: number
   createdAt?: Date | string
 }
 
-export type ReservationUpdateWithoutEventInput = {
+export type ReservationUpdateWithoutSessionInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   guests?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutReservationsNestedInput
 }
 
-export type ReservationUncheckedUpdateWithoutEventInput = {
+export type ReservationUncheckedUpdateWithoutSessionInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   guests?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type ReservationUncheckedUpdateManyWithoutEventInput = {
+export type ReservationUncheckedUpdateManyWithoutSessionInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   guests?: Prisma.IntFieldUpdateOperationsInput | number
@@ -602,65 +602,65 @@ export type ReservationUncheckedUpdateManyWithoutEventInput = {
 
 export type ReservationSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  eventId?: boolean
+  sessionId?: boolean
   userId?: boolean
   guests?: boolean
   createdAt?: boolean
-  event?: boolean | Prisma.EventDefaultArgs<ExtArgs>
+  session?: boolean | Prisma.EventSessionDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["reservation"]>
 
 export type ReservationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  eventId?: boolean
+  sessionId?: boolean
   userId?: boolean
   guests?: boolean
   createdAt?: boolean
-  event?: boolean | Prisma.EventDefaultArgs<ExtArgs>
+  session?: boolean | Prisma.EventSessionDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["reservation"]>
 
 export type ReservationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  eventId?: boolean
+  sessionId?: boolean
   userId?: boolean
   guests?: boolean
   createdAt?: boolean
-  event?: boolean | Prisma.EventDefaultArgs<ExtArgs>
+  session?: boolean | Prisma.EventSessionDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["reservation"]>
 
 export type ReservationSelectScalar = {
   id?: boolean
-  eventId?: boolean
+  sessionId?: boolean
   userId?: boolean
   guests?: boolean
   createdAt?: boolean
 }
 
-export type ReservationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "eventId" | "userId" | "guests" | "createdAt", ExtArgs["result"]["reservation"]>
+export type ReservationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "sessionId" | "userId" | "guests" | "createdAt", ExtArgs["result"]["reservation"]>
 export type ReservationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  event?: boolean | Prisma.EventDefaultArgs<ExtArgs>
+  session?: boolean | Prisma.EventSessionDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
 export type ReservationIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  event?: boolean | Prisma.EventDefaultArgs<ExtArgs>
+  session?: boolean | Prisma.EventSessionDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
 export type ReservationIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  event?: boolean | Prisma.EventDefaultArgs<ExtArgs>
+  session?: boolean | Prisma.EventSessionDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
 
 export type $ReservationPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Reservation"
   objects: {
-    event: Prisma.$EventPayload<ExtArgs>
+    session: Prisma.$EventSessionPayload<ExtArgs>
     user: Prisma.$UserPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
-    eventId: string
+    sessionId: string
     userId: string
     guests: number
     createdAt: Date
@@ -1058,7 +1058,7 @@ readonly fields: ReservationFieldRefs;
  */
 export interface Prisma__ReservationClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  event<T extends Prisma.EventDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EventDefaultArgs<ExtArgs>>): Prisma.Prisma__EventClient<runtime.Types.Result.GetResult<Prisma.$EventPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  session<T extends Prisma.EventSessionDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EventSessionDefaultArgs<ExtArgs>>): Prisma.Prisma__EventSessionClient<runtime.Types.Result.GetResult<Prisma.$EventSessionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1090,7 +1090,7 @@ export interface Prisma__ReservationClient<T, Null = never, ExtArgs extends runt
  */
 export interface ReservationFieldRefs {
   readonly id: Prisma.FieldRef<"Reservation", 'String'>
-  readonly eventId: Prisma.FieldRef<"Reservation", 'String'>
+  readonly sessionId: Prisma.FieldRef<"Reservation", 'String'>
   readonly userId: Prisma.FieldRef<"Reservation", 'String'>
   readonly guests: Prisma.FieldRef<"Reservation", 'Int'>
   readonly createdAt: Prisma.FieldRef<"Reservation", 'DateTime'>

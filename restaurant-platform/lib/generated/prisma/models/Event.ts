@@ -27,13 +27,17 @@ export type AggregateEvent = {
 }
 
 export type EventAvgAggregateOutputType = {
-  price: number | null
+  basePrice: number | null
+  pricePerPerson: number | null
   maxGuests: number | null
+  durationMins: number | null
 }
 
 export type EventSumAggregateOutputType = {
-  price: number | null
+  basePrice: number | null
+  pricePerPerson: number | null
   maxGuests: number | null
+  durationMins: number | null
 }
 
 export type EventMinAggregateOutputType = {
@@ -41,9 +45,10 @@ export type EventMinAggregateOutputType = {
   title: string | null
   description: string | null
   menu: string | null
-  price: number | null
-  date: Date | null
+  basePrice: number | null
+  pricePerPerson: number | null
   maxGuests: number | null
+  durationMins: number | null
   hostId: string | null
   createdAt: Date | null
 }
@@ -53,9 +58,10 @@ export type EventMaxAggregateOutputType = {
   title: string | null
   description: string | null
   menu: string | null
-  price: number | null
-  date: Date | null
+  basePrice: number | null
+  pricePerPerson: number | null
   maxGuests: number | null
+  durationMins: number | null
   hostId: string | null
   createdAt: Date | null
 }
@@ -65,9 +71,10 @@ export type EventCountAggregateOutputType = {
   title: number
   description: number
   menu: number
-  price: number
-  date: number
+  basePrice: number
+  pricePerPerson: number
   maxGuests: number
+  durationMins: number
   hostId: number
   createdAt: number
   _all: number
@@ -75,13 +82,17 @@ export type EventCountAggregateOutputType = {
 
 
 export type EventAvgAggregateInputType = {
-  price?: true
+  basePrice?: true
+  pricePerPerson?: true
   maxGuests?: true
+  durationMins?: true
 }
 
 export type EventSumAggregateInputType = {
-  price?: true
+  basePrice?: true
+  pricePerPerson?: true
   maxGuests?: true
+  durationMins?: true
 }
 
 export type EventMinAggregateInputType = {
@@ -89,9 +100,10 @@ export type EventMinAggregateInputType = {
   title?: true
   description?: true
   menu?: true
-  price?: true
-  date?: true
+  basePrice?: true
+  pricePerPerson?: true
   maxGuests?: true
+  durationMins?: true
   hostId?: true
   createdAt?: true
 }
@@ -101,9 +113,10 @@ export type EventMaxAggregateInputType = {
   title?: true
   description?: true
   menu?: true
-  price?: true
-  date?: true
+  basePrice?: true
+  pricePerPerson?: true
   maxGuests?: true
+  durationMins?: true
   hostId?: true
   createdAt?: true
 }
@@ -113,9 +126,10 @@ export type EventCountAggregateInputType = {
   title?: true
   description?: true
   menu?: true
-  price?: true
-  date?: true
+  basePrice?: true
+  pricePerPerson?: true
   maxGuests?: true
+  durationMins?: true
   hostId?: true
   createdAt?: true
   _all?: true
@@ -212,9 +226,10 @@ export type EventGroupByOutputType = {
   title: string
   description: string
   menu: string
-  price: number
-  date: Date
+  basePrice: number
+  pricePerPerson: number
   maxGuests: number
+  durationMins: number
   hostId: string
   createdAt: Date
   _count: EventCountAggregateOutputType | null
@@ -247,13 +262,15 @@ export type EventWhereInput = {
   title?: Prisma.StringFilter<"Event"> | string
   description?: Prisma.StringFilter<"Event"> | string
   menu?: Prisma.StringFilter<"Event"> | string
-  price?: Prisma.FloatFilter<"Event"> | number
-  date?: Prisma.DateTimeFilter<"Event"> | Date | string
+  basePrice?: Prisma.FloatFilter<"Event"> | number
+  pricePerPerson?: Prisma.FloatFilter<"Event"> | number
   maxGuests?: Prisma.IntFilter<"Event"> | number
+  durationMins?: Prisma.IntFilter<"Event"> | number
   hostId?: Prisma.StringFilter<"Event"> | string
   createdAt?: Prisma.DateTimeFilter<"Event"> | Date | string
   host?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
-  reservations?: Prisma.ReservationListRelationFilter
+  availability?: Prisma.AvailabilityListRelationFilter
+  sessions?: Prisma.EventSessionListRelationFilter
 }
 
 export type EventOrderByWithRelationInput = {
@@ -261,13 +278,15 @@ export type EventOrderByWithRelationInput = {
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
   menu?: Prisma.SortOrder
-  price?: Prisma.SortOrder
-  date?: Prisma.SortOrder
+  basePrice?: Prisma.SortOrder
+  pricePerPerson?: Prisma.SortOrder
   maxGuests?: Prisma.SortOrder
+  durationMins?: Prisma.SortOrder
   hostId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   host?: Prisma.UserOrderByWithRelationInput
-  reservations?: Prisma.ReservationOrderByRelationAggregateInput
+  availability?: Prisma.AvailabilityOrderByRelationAggregateInput
+  sessions?: Prisma.EventSessionOrderByRelationAggregateInput
 }
 
 export type EventWhereUniqueInput = Prisma.AtLeast<{
@@ -278,13 +297,15 @@ export type EventWhereUniqueInput = Prisma.AtLeast<{
   title?: Prisma.StringFilter<"Event"> | string
   description?: Prisma.StringFilter<"Event"> | string
   menu?: Prisma.StringFilter<"Event"> | string
-  price?: Prisma.FloatFilter<"Event"> | number
-  date?: Prisma.DateTimeFilter<"Event"> | Date | string
+  basePrice?: Prisma.FloatFilter<"Event"> | number
+  pricePerPerson?: Prisma.FloatFilter<"Event"> | number
   maxGuests?: Prisma.IntFilter<"Event"> | number
+  durationMins?: Prisma.IntFilter<"Event"> | number
   hostId?: Prisma.StringFilter<"Event"> | string
   createdAt?: Prisma.DateTimeFilter<"Event"> | Date | string
   host?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
-  reservations?: Prisma.ReservationListRelationFilter
+  availability?: Prisma.AvailabilityListRelationFilter
+  sessions?: Prisma.EventSessionListRelationFilter
 }, "id">
 
 export type EventOrderByWithAggregationInput = {
@@ -292,9 +313,10 @@ export type EventOrderByWithAggregationInput = {
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
   menu?: Prisma.SortOrder
-  price?: Prisma.SortOrder
-  date?: Prisma.SortOrder
+  basePrice?: Prisma.SortOrder
+  pricePerPerson?: Prisma.SortOrder
   maxGuests?: Prisma.SortOrder
+  durationMins?: Prisma.SortOrder
   hostId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.EventCountOrderByAggregateInput
@@ -312,9 +334,10 @@ export type EventScalarWhereWithAggregatesInput = {
   title?: Prisma.StringWithAggregatesFilter<"Event"> | string
   description?: Prisma.StringWithAggregatesFilter<"Event"> | string
   menu?: Prisma.StringWithAggregatesFilter<"Event"> | string
-  price?: Prisma.FloatWithAggregatesFilter<"Event"> | number
-  date?: Prisma.DateTimeWithAggregatesFilter<"Event"> | Date | string
+  basePrice?: Prisma.FloatWithAggregatesFilter<"Event"> | number
+  pricePerPerson?: Prisma.FloatWithAggregatesFilter<"Event"> | number
   maxGuests?: Prisma.IntWithAggregatesFilter<"Event"> | number
+  durationMins?: Prisma.IntWithAggregatesFilter<"Event"> | number
   hostId?: Prisma.StringWithAggregatesFilter<"Event"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Event"> | Date | string
 }
@@ -324,12 +347,14 @@ export type EventCreateInput = {
   title: string
   description: string
   menu: string
-  price: number
-  date: Date | string
+  basePrice: number
+  pricePerPerson: number
   maxGuests: number
+  durationMins?: number
   createdAt?: Date | string
   host: Prisma.UserCreateNestedOneWithoutEventsInput
-  reservations?: Prisma.ReservationCreateNestedManyWithoutEventInput
+  availability?: Prisma.AvailabilityCreateNestedManyWithoutEventInput
+  sessions?: Prisma.EventSessionCreateNestedManyWithoutEventInput
 }
 
 export type EventUncheckedCreateInput = {
@@ -337,12 +362,14 @@ export type EventUncheckedCreateInput = {
   title: string
   description: string
   menu: string
-  price: number
-  date: Date | string
+  basePrice: number
+  pricePerPerson: number
   maxGuests: number
+  durationMins?: number
   hostId: string
   createdAt?: Date | string
-  reservations?: Prisma.ReservationUncheckedCreateNestedManyWithoutEventInput
+  availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutEventInput
+  sessions?: Prisma.EventSessionUncheckedCreateNestedManyWithoutEventInput
 }
 
 export type EventUpdateInput = {
@@ -350,12 +377,14 @@ export type EventUpdateInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   menu?: Prisma.StringFieldUpdateOperationsInput | string
-  price?: Prisma.FloatFieldUpdateOperationsInput | number
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  basePrice?: Prisma.FloatFieldUpdateOperationsInput | number
+  pricePerPerson?: Prisma.FloatFieldUpdateOperationsInput | number
   maxGuests?: Prisma.IntFieldUpdateOperationsInput | number
+  durationMins?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   host?: Prisma.UserUpdateOneRequiredWithoutEventsNestedInput
-  reservations?: Prisma.ReservationUpdateManyWithoutEventNestedInput
+  availability?: Prisma.AvailabilityUpdateManyWithoutEventNestedInput
+  sessions?: Prisma.EventSessionUpdateManyWithoutEventNestedInput
 }
 
 export type EventUncheckedUpdateInput = {
@@ -363,12 +392,14 @@ export type EventUncheckedUpdateInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   menu?: Prisma.StringFieldUpdateOperationsInput | string
-  price?: Prisma.FloatFieldUpdateOperationsInput | number
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  basePrice?: Prisma.FloatFieldUpdateOperationsInput | number
+  pricePerPerson?: Prisma.FloatFieldUpdateOperationsInput | number
   maxGuests?: Prisma.IntFieldUpdateOperationsInput | number
+  durationMins?: Prisma.IntFieldUpdateOperationsInput | number
   hostId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  reservations?: Prisma.ReservationUncheckedUpdateManyWithoutEventNestedInput
+  availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutEventNestedInput
+  sessions?: Prisma.EventSessionUncheckedUpdateManyWithoutEventNestedInput
 }
 
 export type EventCreateManyInput = {
@@ -376,9 +407,10 @@ export type EventCreateManyInput = {
   title: string
   description: string
   menu: string
-  price: number
-  date: Date | string
+  basePrice: number
+  pricePerPerson: number
   maxGuests: number
+  durationMins?: number
   hostId: string
   createdAt?: Date | string
 }
@@ -388,9 +420,10 @@ export type EventUpdateManyMutationInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   menu?: Prisma.StringFieldUpdateOperationsInput | string
-  price?: Prisma.FloatFieldUpdateOperationsInput | number
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  basePrice?: Prisma.FloatFieldUpdateOperationsInput | number
+  pricePerPerson?: Prisma.FloatFieldUpdateOperationsInput | number
   maxGuests?: Prisma.IntFieldUpdateOperationsInput | number
+  durationMins?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -399,9 +432,10 @@ export type EventUncheckedUpdateManyInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   menu?: Prisma.StringFieldUpdateOperationsInput | string
-  price?: Prisma.FloatFieldUpdateOperationsInput | number
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  basePrice?: Prisma.FloatFieldUpdateOperationsInput | number
+  pricePerPerson?: Prisma.FloatFieldUpdateOperationsInput | number
   maxGuests?: Prisma.IntFieldUpdateOperationsInput | number
+  durationMins?: Prisma.IntFieldUpdateOperationsInput | number
   hostId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -421,16 +455,19 @@ export type EventCountOrderByAggregateInput = {
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
   menu?: Prisma.SortOrder
-  price?: Prisma.SortOrder
-  date?: Prisma.SortOrder
+  basePrice?: Prisma.SortOrder
+  pricePerPerson?: Prisma.SortOrder
   maxGuests?: Prisma.SortOrder
+  durationMins?: Prisma.SortOrder
   hostId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
 export type EventAvgOrderByAggregateInput = {
-  price?: Prisma.SortOrder
+  basePrice?: Prisma.SortOrder
+  pricePerPerson?: Prisma.SortOrder
   maxGuests?: Prisma.SortOrder
+  durationMins?: Prisma.SortOrder
 }
 
 export type EventMaxOrderByAggregateInput = {
@@ -438,9 +475,10 @@ export type EventMaxOrderByAggregateInput = {
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
   menu?: Prisma.SortOrder
-  price?: Prisma.SortOrder
-  date?: Prisma.SortOrder
+  basePrice?: Prisma.SortOrder
+  pricePerPerson?: Prisma.SortOrder
   maxGuests?: Prisma.SortOrder
+  durationMins?: Prisma.SortOrder
   hostId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
@@ -450,16 +488,19 @@ export type EventMinOrderByAggregateInput = {
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
   menu?: Prisma.SortOrder
-  price?: Prisma.SortOrder
-  date?: Prisma.SortOrder
+  basePrice?: Prisma.SortOrder
+  pricePerPerson?: Prisma.SortOrder
   maxGuests?: Prisma.SortOrder
+  durationMins?: Prisma.SortOrder
   hostId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
 export type EventSumOrderByAggregateInput = {
-  price?: Prisma.SortOrder
+  basePrice?: Prisma.SortOrder
+  pricePerPerson?: Prisma.SortOrder
   maxGuests?: Prisma.SortOrder
+  durationMins?: Prisma.SortOrder
 }
 
 export type EventScalarRelationFilter = {
@@ -525,18 +566,32 @@ export type IntFieldUpdateOperationsInput = {
   divide?: number
 }
 
-export type EventCreateNestedOneWithoutReservationsInput = {
-  create?: Prisma.XOR<Prisma.EventCreateWithoutReservationsInput, Prisma.EventUncheckedCreateWithoutReservationsInput>
-  connectOrCreate?: Prisma.EventCreateOrConnectWithoutReservationsInput
+export type EventCreateNestedOneWithoutAvailabilityInput = {
+  create?: Prisma.XOR<Prisma.EventCreateWithoutAvailabilityInput, Prisma.EventUncheckedCreateWithoutAvailabilityInput>
+  connectOrCreate?: Prisma.EventCreateOrConnectWithoutAvailabilityInput
   connect?: Prisma.EventWhereUniqueInput
 }
 
-export type EventUpdateOneRequiredWithoutReservationsNestedInput = {
-  create?: Prisma.XOR<Prisma.EventCreateWithoutReservationsInput, Prisma.EventUncheckedCreateWithoutReservationsInput>
-  connectOrCreate?: Prisma.EventCreateOrConnectWithoutReservationsInput
-  upsert?: Prisma.EventUpsertWithoutReservationsInput
+export type EventUpdateOneRequiredWithoutAvailabilityNestedInput = {
+  create?: Prisma.XOR<Prisma.EventCreateWithoutAvailabilityInput, Prisma.EventUncheckedCreateWithoutAvailabilityInput>
+  connectOrCreate?: Prisma.EventCreateOrConnectWithoutAvailabilityInput
+  upsert?: Prisma.EventUpsertWithoutAvailabilityInput
   connect?: Prisma.EventWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.EventUpdateToOneWithWhereWithoutReservationsInput, Prisma.EventUpdateWithoutReservationsInput>, Prisma.EventUncheckedUpdateWithoutReservationsInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.EventUpdateToOneWithWhereWithoutAvailabilityInput, Prisma.EventUpdateWithoutAvailabilityInput>, Prisma.EventUncheckedUpdateWithoutAvailabilityInput>
+}
+
+export type EventCreateNestedOneWithoutSessionsInput = {
+  create?: Prisma.XOR<Prisma.EventCreateWithoutSessionsInput, Prisma.EventUncheckedCreateWithoutSessionsInput>
+  connectOrCreate?: Prisma.EventCreateOrConnectWithoutSessionsInput
+  connect?: Prisma.EventWhereUniqueInput
+}
+
+export type EventUpdateOneRequiredWithoutSessionsNestedInput = {
+  create?: Prisma.XOR<Prisma.EventCreateWithoutSessionsInput, Prisma.EventUncheckedCreateWithoutSessionsInput>
+  connectOrCreate?: Prisma.EventCreateOrConnectWithoutSessionsInput
+  upsert?: Prisma.EventUpsertWithoutSessionsInput
+  connect?: Prisma.EventWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.EventUpdateToOneWithWhereWithoutSessionsInput, Prisma.EventUpdateWithoutSessionsInput>, Prisma.EventUncheckedUpdateWithoutSessionsInput>
 }
 
 export type EventCreateWithoutHostInput = {
@@ -544,11 +599,13 @@ export type EventCreateWithoutHostInput = {
   title: string
   description: string
   menu: string
-  price: number
-  date: Date | string
+  basePrice: number
+  pricePerPerson: number
   maxGuests: number
+  durationMins?: number
   createdAt?: Date | string
-  reservations?: Prisma.ReservationCreateNestedManyWithoutEventInput
+  availability?: Prisma.AvailabilityCreateNestedManyWithoutEventInput
+  sessions?: Prisma.EventSessionCreateNestedManyWithoutEventInput
 }
 
 export type EventUncheckedCreateWithoutHostInput = {
@@ -556,11 +613,13 @@ export type EventUncheckedCreateWithoutHostInput = {
   title: string
   description: string
   menu: string
-  price: number
-  date: Date | string
+  basePrice: number
+  pricePerPerson: number
   maxGuests: number
+  durationMins?: number
   createdAt?: Date | string
-  reservations?: Prisma.ReservationUncheckedCreateNestedManyWithoutEventInput
+  availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutEventInput
+  sessions?: Prisma.EventSessionUncheckedCreateNestedManyWithoutEventInput
 }
 
 export type EventCreateOrConnectWithoutHostInput = {
@@ -596,75 +655,156 @@ export type EventScalarWhereInput = {
   title?: Prisma.StringFilter<"Event"> | string
   description?: Prisma.StringFilter<"Event"> | string
   menu?: Prisma.StringFilter<"Event"> | string
-  price?: Prisma.FloatFilter<"Event"> | number
-  date?: Prisma.DateTimeFilter<"Event"> | Date | string
+  basePrice?: Prisma.FloatFilter<"Event"> | number
+  pricePerPerson?: Prisma.FloatFilter<"Event"> | number
   maxGuests?: Prisma.IntFilter<"Event"> | number
+  durationMins?: Prisma.IntFilter<"Event"> | number
   hostId?: Prisma.StringFilter<"Event"> | string
   createdAt?: Prisma.DateTimeFilter<"Event"> | Date | string
 }
 
-export type EventCreateWithoutReservationsInput = {
+export type EventCreateWithoutAvailabilityInput = {
   id?: string
   title: string
   description: string
   menu: string
-  price: number
-  date: Date | string
+  basePrice: number
+  pricePerPerson: number
   maxGuests: number
+  durationMins?: number
   createdAt?: Date | string
   host: Prisma.UserCreateNestedOneWithoutEventsInput
+  sessions?: Prisma.EventSessionCreateNestedManyWithoutEventInput
 }
 
-export type EventUncheckedCreateWithoutReservationsInput = {
+export type EventUncheckedCreateWithoutAvailabilityInput = {
   id?: string
   title: string
   description: string
   menu: string
-  price: number
-  date: Date | string
+  basePrice: number
+  pricePerPerson: number
   maxGuests: number
+  durationMins?: number
   hostId: string
   createdAt?: Date | string
+  sessions?: Prisma.EventSessionUncheckedCreateNestedManyWithoutEventInput
 }
 
-export type EventCreateOrConnectWithoutReservationsInput = {
+export type EventCreateOrConnectWithoutAvailabilityInput = {
   where: Prisma.EventWhereUniqueInput
-  create: Prisma.XOR<Prisma.EventCreateWithoutReservationsInput, Prisma.EventUncheckedCreateWithoutReservationsInput>
+  create: Prisma.XOR<Prisma.EventCreateWithoutAvailabilityInput, Prisma.EventUncheckedCreateWithoutAvailabilityInput>
 }
 
-export type EventUpsertWithoutReservationsInput = {
-  update: Prisma.XOR<Prisma.EventUpdateWithoutReservationsInput, Prisma.EventUncheckedUpdateWithoutReservationsInput>
-  create: Prisma.XOR<Prisma.EventCreateWithoutReservationsInput, Prisma.EventUncheckedCreateWithoutReservationsInput>
+export type EventUpsertWithoutAvailabilityInput = {
+  update: Prisma.XOR<Prisma.EventUpdateWithoutAvailabilityInput, Prisma.EventUncheckedUpdateWithoutAvailabilityInput>
+  create: Prisma.XOR<Prisma.EventCreateWithoutAvailabilityInput, Prisma.EventUncheckedCreateWithoutAvailabilityInput>
   where?: Prisma.EventWhereInput
 }
 
-export type EventUpdateToOneWithWhereWithoutReservationsInput = {
+export type EventUpdateToOneWithWhereWithoutAvailabilityInput = {
   where?: Prisma.EventWhereInput
-  data: Prisma.XOR<Prisma.EventUpdateWithoutReservationsInput, Prisma.EventUncheckedUpdateWithoutReservationsInput>
+  data: Prisma.XOR<Prisma.EventUpdateWithoutAvailabilityInput, Prisma.EventUncheckedUpdateWithoutAvailabilityInput>
 }
 
-export type EventUpdateWithoutReservationsInput = {
+export type EventUpdateWithoutAvailabilityInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   menu?: Prisma.StringFieldUpdateOperationsInput | string
-  price?: Prisma.FloatFieldUpdateOperationsInput | number
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  basePrice?: Prisma.FloatFieldUpdateOperationsInput | number
+  pricePerPerson?: Prisma.FloatFieldUpdateOperationsInput | number
   maxGuests?: Prisma.IntFieldUpdateOperationsInput | number
+  durationMins?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   host?: Prisma.UserUpdateOneRequiredWithoutEventsNestedInput
+  sessions?: Prisma.EventSessionUpdateManyWithoutEventNestedInput
 }
 
-export type EventUncheckedUpdateWithoutReservationsInput = {
+export type EventUncheckedUpdateWithoutAvailabilityInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   menu?: Prisma.StringFieldUpdateOperationsInput | string
-  price?: Prisma.FloatFieldUpdateOperationsInput | number
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  basePrice?: Prisma.FloatFieldUpdateOperationsInput | number
+  pricePerPerson?: Prisma.FloatFieldUpdateOperationsInput | number
   maxGuests?: Prisma.IntFieldUpdateOperationsInput | number
+  durationMins?: Prisma.IntFieldUpdateOperationsInput | number
   hostId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  sessions?: Prisma.EventSessionUncheckedUpdateManyWithoutEventNestedInput
+}
+
+export type EventCreateWithoutSessionsInput = {
+  id?: string
+  title: string
+  description: string
+  menu: string
+  basePrice: number
+  pricePerPerson: number
+  maxGuests: number
+  durationMins?: number
+  createdAt?: Date | string
+  host: Prisma.UserCreateNestedOneWithoutEventsInput
+  availability?: Prisma.AvailabilityCreateNestedManyWithoutEventInput
+}
+
+export type EventUncheckedCreateWithoutSessionsInput = {
+  id?: string
+  title: string
+  description: string
+  menu: string
+  basePrice: number
+  pricePerPerson: number
+  maxGuests: number
+  durationMins?: number
+  hostId: string
+  createdAt?: Date | string
+  availability?: Prisma.AvailabilityUncheckedCreateNestedManyWithoutEventInput
+}
+
+export type EventCreateOrConnectWithoutSessionsInput = {
+  where: Prisma.EventWhereUniqueInput
+  create: Prisma.XOR<Prisma.EventCreateWithoutSessionsInput, Prisma.EventUncheckedCreateWithoutSessionsInput>
+}
+
+export type EventUpsertWithoutSessionsInput = {
+  update: Prisma.XOR<Prisma.EventUpdateWithoutSessionsInput, Prisma.EventUncheckedUpdateWithoutSessionsInput>
+  create: Prisma.XOR<Prisma.EventCreateWithoutSessionsInput, Prisma.EventUncheckedCreateWithoutSessionsInput>
+  where?: Prisma.EventWhereInput
+}
+
+export type EventUpdateToOneWithWhereWithoutSessionsInput = {
+  where?: Prisma.EventWhereInput
+  data: Prisma.XOR<Prisma.EventUpdateWithoutSessionsInput, Prisma.EventUncheckedUpdateWithoutSessionsInput>
+}
+
+export type EventUpdateWithoutSessionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  menu?: Prisma.StringFieldUpdateOperationsInput | string
+  basePrice?: Prisma.FloatFieldUpdateOperationsInput | number
+  pricePerPerson?: Prisma.FloatFieldUpdateOperationsInput | number
+  maxGuests?: Prisma.IntFieldUpdateOperationsInput | number
+  durationMins?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  host?: Prisma.UserUpdateOneRequiredWithoutEventsNestedInput
+  availability?: Prisma.AvailabilityUpdateManyWithoutEventNestedInput
+}
+
+export type EventUncheckedUpdateWithoutSessionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  menu?: Prisma.StringFieldUpdateOperationsInput | string
+  basePrice?: Prisma.FloatFieldUpdateOperationsInput | number
+  pricePerPerson?: Prisma.FloatFieldUpdateOperationsInput | number
+  maxGuests?: Prisma.IntFieldUpdateOperationsInput | number
+  durationMins?: Prisma.IntFieldUpdateOperationsInput | number
+  hostId?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutEventNestedInput
 }
 
 export type EventCreateManyHostInput = {
@@ -672,9 +812,10 @@ export type EventCreateManyHostInput = {
   title: string
   description: string
   menu: string
-  price: number
-  date: Date | string
+  basePrice: number
+  pricePerPerson: number
   maxGuests: number
+  durationMins?: number
   createdAt?: Date | string
 }
 
@@ -683,11 +824,13 @@ export type EventUpdateWithoutHostInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   menu?: Prisma.StringFieldUpdateOperationsInput | string
-  price?: Prisma.FloatFieldUpdateOperationsInput | number
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  basePrice?: Prisma.FloatFieldUpdateOperationsInput | number
+  pricePerPerson?: Prisma.FloatFieldUpdateOperationsInput | number
   maxGuests?: Prisma.IntFieldUpdateOperationsInput | number
+  durationMins?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  reservations?: Prisma.ReservationUpdateManyWithoutEventNestedInput
+  availability?: Prisma.AvailabilityUpdateManyWithoutEventNestedInput
+  sessions?: Prisma.EventSessionUpdateManyWithoutEventNestedInput
 }
 
 export type EventUncheckedUpdateWithoutHostInput = {
@@ -695,11 +838,13 @@ export type EventUncheckedUpdateWithoutHostInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   menu?: Prisma.StringFieldUpdateOperationsInput | string
-  price?: Prisma.FloatFieldUpdateOperationsInput | number
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  basePrice?: Prisma.FloatFieldUpdateOperationsInput | number
+  pricePerPerson?: Prisma.FloatFieldUpdateOperationsInput | number
   maxGuests?: Prisma.IntFieldUpdateOperationsInput | number
+  durationMins?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  reservations?: Prisma.ReservationUncheckedUpdateManyWithoutEventNestedInput
+  availability?: Prisma.AvailabilityUncheckedUpdateManyWithoutEventNestedInput
+  sessions?: Prisma.EventSessionUncheckedUpdateManyWithoutEventNestedInput
 }
 
 export type EventUncheckedUpdateManyWithoutHostInput = {
@@ -707,9 +852,10 @@ export type EventUncheckedUpdateManyWithoutHostInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   menu?: Prisma.StringFieldUpdateOperationsInput | string
-  price?: Prisma.FloatFieldUpdateOperationsInput | number
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  basePrice?: Prisma.FloatFieldUpdateOperationsInput | number
+  pricePerPerson?: Prisma.FloatFieldUpdateOperationsInput | number
   maxGuests?: Prisma.IntFieldUpdateOperationsInput | number
+  durationMins?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -719,11 +865,13 @@ export type EventUncheckedUpdateManyWithoutHostInput = {
  */
 
 export type EventCountOutputType = {
-  reservations: number
+  availability: number
+  sessions: number
 }
 
 export type EventCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  reservations?: boolean | EventCountOutputTypeCountReservationsArgs
+  availability?: boolean | EventCountOutputTypeCountAvailabilityArgs
+  sessions?: boolean | EventCountOutputTypeCountSessionsArgs
 }
 
 /**
@@ -739,8 +887,15 @@ export type EventCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extens
 /**
  * EventCountOutputType without action
  */
-export type EventCountOutputTypeCountReservationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.ReservationWhereInput
+export type EventCountOutputTypeCountAvailabilityArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AvailabilityWhereInput
+}
+
+/**
+ * EventCountOutputType without action
+ */
+export type EventCountOutputTypeCountSessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.EventSessionWhereInput
 }
 
 
@@ -749,13 +904,15 @@ export type EventSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   title?: boolean
   description?: boolean
   menu?: boolean
-  price?: boolean
-  date?: boolean
+  basePrice?: boolean
+  pricePerPerson?: boolean
   maxGuests?: boolean
+  durationMins?: boolean
   hostId?: boolean
   createdAt?: boolean
   host?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  reservations?: boolean | Prisma.Event$reservationsArgs<ExtArgs>
+  availability?: boolean | Prisma.Event$availabilityArgs<ExtArgs>
+  sessions?: boolean | Prisma.Event$sessionsArgs<ExtArgs>
   _count?: boolean | Prisma.EventCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["event"]>
 
@@ -764,9 +921,10 @@ export type EventSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   title?: boolean
   description?: boolean
   menu?: boolean
-  price?: boolean
-  date?: boolean
+  basePrice?: boolean
+  pricePerPerson?: boolean
   maxGuests?: boolean
+  durationMins?: boolean
   hostId?: boolean
   createdAt?: boolean
   host?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -777,9 +935,10 @@ export type EventSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   title?: boolean
   description?: boolean
   menu?: boolean
-  price?: boolean
-  date?: boolean
+  basePrice?: boolean
+  pricePerPerson?: boolean
   maxGuests?: boolean
+  durationMins?: boolean
   hostId?: boolean
   createdAt?: boolean
   host?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -790,17 +949,19 @@ export type EventSelectScalar = {
   title?: boolean
   description?: boolean
   menu?: boolean
-  price?: boolean
-  date?: boolean
+  basePrice?: boolean
+  pricePerPerson?: boolean
   maxGuests?: boolean
+  durationMins?: boolean
   hostId?: boolean
   createdAt?: boolean
 }
 
-export type EventOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "description" | "menu" | "price" | "date" | "maxGuests" | "hostId" | "createdAt", ExtArgs["result"]["event"]>
+export type EventOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "description" | "menu" | "basePrice" | "pricePerPerson" | "maxGuests" | "durationMins" | "hostId" | "createdAt", ExtArgs["result"]["event"]>
 export type EventInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   host?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  reservations?: boolean | Prisma.Event$reservationsArgs<ExtArgs>
+  availability?: boolean | Prisma.Event$availabilityArgs<ExtArgs>
+  sessions?: boolean | Prisma.Event$sessionsArgs<ExtArgs>
   _count?: boolean | Prisma.EventCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type EventIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -814,16 +975,18 @@ export type $EventPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   name: "Event"
   objects: {
     host: Prisma.$UserPayload<ExtArgs>
-    reservations: Prisma.$ReservationPayload<ExtArgs>[]
+    availability: Prisma.$AvailabilityPayload<ExtArgs>[]
+    sessions: Prisma.$EventSessionPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     title: string
     description: string
     menu: string
-    price: number
-    date: Date
+    basePrice: number
+    pricePerPerson: number
     maxGuests: number
+    durationMins: number
     hostId: string
     createdAt: Date
   }, ExtArgs["result"]["event"]>
@@ -1221,7 +1384,8 @@ readonly fields: EventFieldRefs;
 export interface Prisma__EventClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   host<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  reservations<T extends Prisma.Event$reservationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Event$reservationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ReservationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  availability<T extends Prisma.Event$availabilityArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Event$availabilityArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AvailabilityPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  sessions<T extends Prisma.Event$sessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Event$sessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EventSessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1255,9 +1419,10 @@ export interface EventFieldRefs {
   readonly title: Prisma.FieldRef<"Event", 'String'>
   readonly description: Prisma.FieldRef<"Event", 'String'>
   readonly menu: Prisma.FieldRef<"Event", 'String'>
-  readonly price: Prisma.FieldRef<"Event", 'Float'>
-  readonly date: Prisma.FieldRef<"Event", 'DateTime'>
+  readonly basePrice: Prisma.FieldRef<"Event", 'Float'>
+  readonly pricePerPerson: Prisma.FieldRef<"Event", 'Float'>
   readonly maxGuests: Prisma.FieldRef<"Event", 'Int'>
+  readonly durationMins: Prisma.FieldRef<"Event", 'Int'>
   readonly hostId: Prisma.FieldRef<"Event", 'String'>
   readonly createdAt: Prisma.FieldRef<"Event", 'DateTime'>
 }
@@ -1659,27 +1824,51 @@ export type EventDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Interna
 }
 
 /**
- * Event.reservations
+ * Event.availability
  */
-export type Event$reservationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type Event$availabilityArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Reservation
+   * Select specific fields to fetch from the Availability
    */
-  select?: Prisma.ReservationSelect<ExtArgs> | null
+  select?: Prisma.AvailabilitySelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Reservation
+   * Omit specific fields from the Availability
    */
-  omit?: Prisma.ReservationOmit<ExtArgs> | null
+  omit?: Prisma.AvailabilityOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.ReservationInclude<ExtArgs> | null
-  where?: Prisma.ReservationWhereInput
-  orderBy?: Prisma.ReservationOrderByWithRelationInput | Prisma.ReservationOrderByWithRelationInput[]
-  cursor?: Prisma.ReservationWhereUniqueInput
+  include?: Prisma.AvailabilityInclude<ExtArgs> | null
+  where?: Prisma.AvailabilityWhereInput
+  orderBy?: Prisma.AvailabilityOrderByWithRelationInput | Prisma.AvailabilityOrderByWithRelationInput[]
+  cursor?: Prisma.AvailabilityWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.ReservationScalarFieldEnum | Prisma.ReservationScalarFieldEnum[]
+  distinct?: Prisma.AvailabilityScalarFieldEnum | Prisma.AvailabilityScalarFieldEnum[]
+}
+
+/**
+ * Event.sessions
+ */
+export type Event$sessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the EventSession
+   */
+  select?: Prisma.EventSessionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the EventSession
+   */
+  omit?: Prisma.EventSessionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.EventSessionInclude<ExtArgs> | null
+  where?: Prisma.EventSessionWhereInput
+  orderBy?: Prisma.EventSessionOrderByWithRelationInput | Prisma.EventSessionOrderByWithRelationInput[]
+  cursor?: Prisma.EventSessionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.EventSessionScalarFieldEnum | Prisma.EventSessionScalarFieldEnum[]
 }
 
 /**

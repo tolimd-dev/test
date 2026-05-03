@@ -84,17 +84,15 @@ document.getElementById('test-key-btn').addEventListener('click', async () => {
   setKeyStatus('', 'Testing…');
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-        'content-type': 'application/json',
+        'Authorization': `Bearer ${key}`,
+        'Content-Type':  'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 10,
+        model:      'gpt-4o-mini',
+        max_tokens: 5,
         messages: [{ role: 'user', content: 'Hi' }],
       }),
     });
@@ -118,11 +116,11 @@ document.getElementById('test-key-btn').addEventListener('click', async () => {
 // ---------------------------------------------------------------------------
 
 function load() {
-  chrome.storage.local.get(['customTools', 'patientRegex', 'claudeApiKey', 'wrenChatModel'], r => {
-    const tools  = r.customTools   || DEFAULT_TOOLS;
-    const regex  = r.patientRegex  || DEFAULT_REGEX;
-    const key    = r.claudeApiKey  || '';
-    const model  = r.wrenChatModel || 'claude-haiku-4-5-20251001';
+  chrome.storage.local.get(['customTools', 'patientRegex', 'openaiApiKey', 'wrenChatModel'], r => {
+    const tools = r.customTools   || DEFAULT_TOOLS;
+    const regex = r.patientRegex  || DEFAULT_REGEX;
+    const key   = r.openaiApiKey  || '';
+    const model = r.wrenChatModel || 'gpt-4o-mini';
 
     const tbody = document.getElementById('tool-body');
     tbody.innerHTML = '';
@@ -152,9 +150,7 @@ function save() {
   }
 
   const model = document.getElementById('wren-model').value;
-  const data  = { customTools: tools, patientRegex: regex, wrenChatModel: model };
-  if (key) data.claudeApiKey = key;
-  else     data.claudeApiKey = '';
+  const data  = { customTools: tools, patientRegex: regex, wrenChatModel: model, openaiApiKey: key };
 
   chrome.storage.local.set(data, () => toast('Settings saved.'));
 }

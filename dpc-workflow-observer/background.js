@@ -168,7 +168,7 @@ chrome.windows.onFocusChanged.addListener(async (windowId) => {
 // ---------------------------------------------------------------------------
 
 async function triggerAnalysis(reason) {
-  const r   = await chrome.storage.local.get(['activityLog', 'claudeApiKey', 'lastAnalyzed']);
+  const r   = await chrome.storage.local.get(['activityLog', 'openaiApiKey', 'lastAnalyzed']);
   const log = r.activityLog || [];
 
   if (log.length < MIN_EVENTS_TO_ANALYZE) return;
@@ -180,7 +180,7 @@ async function triggerAnalysis(reason) {
   }
 
   try {
-    const suggestions = await runAnalysis(log, r.claudeApiKey || null);
+    const suggestions = await runAnalysis(log, r.openaiApiKey || null);
     await chrome.storage.local.set({
       suggestions,
       lastAnalyzed: new Date().toISOString(),
@@ -193,8 +193,8 @@ async function triggerAnalysis(reason) {
     }
 
     // Ask Wren if she has a proactive observation after session ends
-    if (reason === 'session_end' && r.claudeApiKey) {
-      await triggerWrenObservation(log, r.claudeApiKey);
+    if (reason === 'session_end' && r.openaiApiKey) {
+      await triggerWrenObservation(log, r.openaiApiKey);
     }
   } catch (err) {
     console.error('[DPC Observer] Analysis failed:', err);
@@ -305,8 +305,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
 
   if (msg.type === 'WREN_SEND') {
-    chrome.storage.local.get(['activityLog', 'claudeApiKey', 'wrenConversation', 'wrenChatModel'], async r => {
-      const apiKey  = r.claudeApiKey || '';
+    chrome.storage.local.get(['activityLog', 'openaiApiKey', 'wrenConversation', 'wrenChatModel'], async r => {
+      const apiKey  = r.openaiApiKey || '';
       const log     = r.activityLog  || [];
       const model   = r.wrenChatModel || WREN_MODELS.chat;
       const history = (r.wrenConversation || []).map(m => ({ role: m.role, content: m.content }));
@@ -336,13 +336,13 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
 
   if (msg.type === 'WREN_FIRST_CONTACT') {
-    chrome.storage.local.get(['activityLog', 'claudeApiKey', 'wrenConversation', 'wrenChatModel', 'wrenFirstContactDone'], async r => {
+    chrome.storage.local.get(['activityLog', 'openaiApiKey', 'wrenConversation', 'wrenChatModel', 'wrenFirstContactDone'], async r => {
       if (r.wrenFirstContactDone) {
         sendResponse({ reply: null, alreadyDone: true });
         return;
       }
 
-      const apiKey = r.claudeApiKey || '';
+      const apiKey = r.openaiApiKey || '';
       const log    = r.activityLog  || [];
       const model  = r.wrenChatModel || WREN_MODELS.chat;
 

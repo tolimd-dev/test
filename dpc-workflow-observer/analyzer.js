@@ -180,7 +180,7 @@ function runLocalRules(log) {
 }
 
 // ---------------------------------------------------------------------------
-// Claude API analysis (optional — richer, more personalized)
+// OpenAI API analysis (optional — richer, more personalized)
 // ---------------------------------------------------------------------------
 
 function anonymizeForAI(log) {
@@ -213,11 +213,11 @@ function anonymizeForAI(log) {
   return { sequences: anonSequences, stats, daysOfData: stats.daysActive };
 }
 
-async function callClaudeAPI(payload, apiKey) {
-  const prompt = `You are a workflow automation expert for a Direct Primary Care (DPC) physician.
-DPC is relationship-based primary care where a doctor sees fewer patients and handles care asynchronously — via text, phone, email, not just scheduled visits.
+async function callOpenAIForAnalysis(payload, apiKey) {
+  const systemPrompt = `You are a workflow automation expert for a Direct Primary Care (DPC) physician.
+DPC is relationship-based primary care where a doctor sees fewer patients and handles care asynchronously — via text, phone, email, not just scheduled visits.`;
 
-Here is an anonymized summary of this physician's actual workflow over ${payload.daysOfData} days:
+  const userPrompt = `Here is an anonymized summary of this physician's actual workflow over ${payload.daysOfData} days:
 
 TOOL USAGE:
 ${Object.entries(payload.stats.toolCounts).map(([k,v]) => `  ${k}: ${v} sessions`).join('\n')}
@@ -241,29 +241,32 @@ Respond with a JSON array (no markdown, just the raw JSON array) where each item
   "icon": "single emoji"
 }`;
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      'content-type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type':  'application/json',
     },
     body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
+      model:      'gpt-4o-mini',
       max_tokens: 1500,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user',   content: userPrompt   },
+      ],
     }),
   });
 
-  if (!response.ok) throw new Error(`Claude API error: ${response.status}`);
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(`OpenAI API error ${response.status}: ${err.error?.message || ''}`);
+  }
 
   const data = await response.json();
-  const text = data.content?.[0]?.text || '';
+  const text = data.choices?.[0]?.message?.content || '';
 
-  // Parse JSON from response
   const jsonMatch = text.match(/\[[\s\S]*\]/);
-  if (!jsonMatch) throw new Error('No JSON array in Claude response');
+  if (!jsonMatch) throw new Error('No JSON array in OpenAI response');
 
   const suggestions = JSON.parse(jsonMatch[0]);
   return suggestions.map(s => ({
@@ -286,7 +289,7 @@ async function runAnalysis(log, apiKey) {
 
   try {
     const payload        = anonymizeForAI(log);
-    const aiSuggestions  = await callClaudeAPI(payload, apiKey);
+    const aiSuggestions  = await callOpenAIForAnalysis(payload, apiKey);
 
     // Merge: AI suggestions first, then local ones not already covered
     const aiIds = new Set(aiSuggestions.map(s => s.automationType));

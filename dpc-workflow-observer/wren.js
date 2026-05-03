@@ -11,8 +11,8 @@
 // ---------------------------------------------------------------------------
 
 const WREN_MODELS = {
-  observation: 'claude-haiku-4-5-20251001',  // background / proactive observations
-  chat:        'claude-haiku-4-5-20251001',   // conversation (upgrade to sonnet in options)
+  observation: 'gpt-4o-mini',  // background / proactive observations
+  chat:        'gpt-4o-mini',   // conversation (upgrade to gpt-4o in options)
 };
 
 // ---------------------------------------------------------------------------
@@ -132,6 +132,38 @@ Keep responses focused. The doctor is busy.`;
 }
 
 // ---------------------------------------------------------------------------
+// OpenAI API helper
+// ---------------------------------------------------------------------------
+
+async function callOpenAI(apiKey, model, systemPrompt, messages, maxTokens) {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization':  `Bearer ${apiKey}`,
+      'Content-Type':   'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: maxTokens,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...messages,
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error?.message || `API error ${response.status}`);
+  }
+
+  const data = await response.json();
+  const text = data.choices?.[0]?.message?.content?.trim();
+  if (!text) throw new Error('Empty response from API');
+  return text;
+}
+
+// ---------------------------------------------------------------------------
 // Proactive observation generator
 // Called after a session ends — Wren decides if she has something worth saying.
 // ---------------------------------------------------------------------------
@@ -157,25 +189,13 @@ Examples of good observations:
 If you don't have a clear specific pattern yet: NOTHING_YET`;
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: model || WREN_MODELS.observation,
-        max_tokens: 200,
-        system: buildSystemPrompt(ctx),
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    });
-
-    if (!response.ok) return null;
-    const data = await response.json();
-    const text = data.content?.[0]?.text?.trim();
+    const text = await callOpenAI(
+      apiKey,
+      model || WREN_MODELS.observation,
+      buildSystemPrompt(ctx),
+      [{ role: 'user', content: prompt }],
+      200
+    );
     if (!text || text === 'NOTHING_YET') return null;
     return text;
   } catch {
@@ -188,38 +208,15 @@ If you don't have a clear specific pattern yet: NOTHING_YET`;
 // ---------------------------------------------------------------------------
 
 async function sendWrenMessage(userMessage, conversationHistory, log, apiKey, model) {
-  const ctx      = buildWorkflowContext(log);
-  const system   = buildSystemPrompt(ctx);
+  const ctx    = buildWorkflowContext(log);
+  const system = buildSystemPrompt(ctx);
+
   const messages = [
     ...conversationHistory,
     { role: 'user', content: userMessage },
   ];
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: model || WREN_MODELS.chat,
-      max_tokens: 1024,
-      system,
-      messages,
-    }),
-  });
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err.error?.message || `API error ${response.status}`);
-  }
-
-  const data  = await response.json();
-  const reply = data.content?.[0]?.text?.trim();
-  if (!reply) throw new Error('Empty response from API');
-  return reply;
+  return callOpenAI(apiKey, model || WREN_MODELS.chat, system, messages, 1024);
 }
 
 // ---------------------------------------------------------------------------
@@ -235,25 +232,13 @@ async function generateFirstContactMessage(log, apiKey, model) {
     : `The doctor is opening your chat for the first time. You haven't seen much workflow data yet — just introduce yourself in 2-3 sentences. Tell them what you are, that you're watching, and that you'll reach out when you have something worth saying. Keep it short.`;
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: model || WREN_MODELS.chat,
-        max_tokens: 200,
-        system: buildSystemPrompt(ctx),
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    });
-
-    if (!response.ok) return null;
-    const data = await response.json();
-    return data.content?.[0]?.text?.trim() || null;
+    return await callOpenAI(
+      apiKey,
+      model || WREN_MODELS.chat,
+      buildSystemPrompt(ctx),
+      [{ role: 'user', content: prompt }],
+      200
+    );
   } catch {
     return null;
   }

@@ -95,7 +95,7 @@ function renderSuggestions(suggestions, lastAnalyzed) {
         <div class="empty-icon">🔍</div>
         <h2>Nothing to suggest yet</h2>
         <p>Use your clinical tools normally for a bit — open patient charts, check labs, send faxes. Once there's enough data, click <strong>Analyze my workflow</strong> and it will identify what to automate based on what you actually do.</p>
-        <p style="margin-top:12px; font-size:12px; color:#94a3b8;">No Claude API key needed for the first suggestions. Deeper analysis is available if you add one in Settings.</p>
+        <p style="margin-top:12px; font-size:12px; color:#94a3b8;">No API key needed for the first suggestions. Deeper analysis is available if you add your OpenAI key in Settings.</p>
       </div>`;
     return;
   }
@@ -468,8 +468,8 @@ function initWrenView() {
   wrenInitialized = true;
 
   // Check if API key exists first
-  chrome.storage.local.get(['claudeApiKey'], r => {
-    if (!r.claudeApiKey) {
+  chrome.storage.local.get(['openaiApiKey'], r => {
+    if (!r.openaiApiKey) {
       container.innerHTML = `
         <div class="wren-wrap">
           <div class="wren-header">
@@ -481,8 +481,8 @@ function initWrenView() {
           </div>
           <div class="wren-no-key">
             <h3>Wren needs an API key to talk</h3>
-            <p>Add your Claude API key in Settings to activate Wren. She'll introduce herself once you do, based on what she's already observed about your workflow.</p>
-            <p style="font-size:11px; margin-top:8px; color:#94a3b8;">Get a key at console.anthropic.com — for a solo practice this costs roughly $2–5/month. Sign an Anthropic HIPAA BAA before entering patient-related information in chat.</p>
+            <p>Add your OpenAI API key in Settings to activate Wren. She'll introduce herself once you do, based on what she's already observed about your workflow.</p>
+            <p style="font-size:11px; margin-top:8px; color:#94a3b8;">Get a key at platform.openai.com — for a solo practice this costs roughly $2–5/month. Your existing OpenAI BAA covers this use.</p>
             <button onclick="chrome.runtime.openOptionsPage()">Open Settings</button>
           </div>
         </div>`;
@@ -566,7 +566,7 @@ function buildWrenUI(container) {
       if (reply) {
         appendMessage(messagesEl, { role: 'assistant', content: reply, timestamp: new Date().toISOString() });
       } else if (error === 'no_key') {
-        appendMessage(messagesEl, { role: 'assistant', content: "I need a Claude API key to respond. Add it in Settings.", timestamp: new Date().toISOString() });
+        appendMessage(messagesEl, { role: 'assistant', content: "I need an OpenAI API key to respond. Add it in Settings.", timestamp: new Date().toISOString() });
       } else if (error) {
         appendMessage(messagesEl, { role: 'assistant', content: `Something went wrong: ${error}`, timestamp: new Date().toISOString() });
       }

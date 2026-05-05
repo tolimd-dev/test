@@ -15,9 +15,11 @@ export function Nav() {
           TableStory
         </Link>
         <div className="flex items-center gap-6 text-sm font-medium">
-          <Link href="/" className="text-gray-600 hover:text-amber-700 transition-colors">
-            Browse Events
-          </Link>
+          {user?.role !== "HOST" && (
+            <Link href="/" className="text-gray-600 hover:text-amber-700 transition-colors">
+              Browse Experiences
+            </Link>
+          )}
           {!loading && !user && (
             <>
               <Link href="/auth/signin" className="text-gray-600 hover:text-amber-700 transition-colors">
@@ -32,8 +34,8 @@ export function Nav() {
             </>
           )}
           {user?.role === "HOST" && (
-            <Link href="/host/dashboard" className="text-gray-600 hover:text-amber-700 transition-colors">
-              My Events
+            <Link href="/host/dashboard" className="bg-amber-700 text-white px-4 py-2 rounded-lg hover:bg-amber-800 transition-colors">
+              My Dashboard
             </Link>
           )}
           {user?.role === "PATRON" && (

@@ -24,8 +24,7 @@
   "dependencies": {
     "active-win": "^8.2.0",
     "electron-store": "^8.2.0",
-    "openai": "^4.52.7",
-    "screenshot-desktop": "^1.12.7"
+    "openai": "^4.52.7"
   },
   "devDependencies": {
     "electron": "^28.3.3",

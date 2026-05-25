@@ -69,6 +69,7 @@ function showApp(user) {
   $('settings-user').textContent = user.email;
   loadConversation();
   scheduleProactiveCheck();
+  window.wren.getScreenCaptureEnabled().then(on => { if (on !== false) startScreenCapture(); });
 }
 
 function showAuthError(msg) {
@@ -119,6 +120,7 @@ $('btn-save-key').addEventListener('click', async () => {
 
 $('btn-signout').addEventListener('click', async () => {
   if (messagesUnsub) { messagesUnsub(); messagesUnsub = null; }
+  stopScreenCapture();
   await auth.signOut();
 });
 
@@ -369,17 +371,120 @@ function scrollToBottom() {
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
-// ── Screen observation listener ────────────────────────────────────────────
+// ── Continuous screen recording ────────────────────────────────────────────
+// Captures a live video stream, samples frames at 500ms, diffs adjacent
+// frames, and sends changed frames to GPT-4o Vision via main process IPC.
+// Only the extracted observation text is stored — never the screenshot.
 
-window.wren.onScreenObservation(async (data) => {
-  screenObservations.unshift({ text: data.observation, app: data.app, ts: data.ts });
-  if (screenObservations.length > 30) screenObservations.pop();
+const DIFF_W  = 160;   // small canvas for fast pixel diffing
+const DIFF_H  = 90;
+const SEND_W  = 1280;  // resolution sent to Vision
+const SEND_H  = 720;
+const DIFF_THRESHOLD    = 0.03;  // 3% pixels changed = meaningful
+const MIN_VISION_GAP_MS = 5000;  // at most one Vision call per 5s (cost control)
 
-  // Log to Firestore (observation text only — never the screenshot)
-  if (currentUser) {
-    await logActivity({ type: 'screen_observation', observation: data.observation, app: data.app });
+let captureVideo    = null;
+let captureCanvas   = null;
+let captureCtx      = null;
+let diffCanvas      = null;
+let diffCtx         = null;
+let lastDiffPixels  = null;
+let lastVisionTs    = 0;
+let visionBusy      = false;
+let captureInterval = null;
+
+async function startScreenCapture() {
+  if (captureInterval) return;
+  try {
+    const sources = await window.wren.getSources();
+    const src = sources.find(s => /screen|entire|display/i.test(s.name)) || sources[0];
+    if (!src) { console.warn('[Wren Vision] No screen source found'); return; }
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: { mandatory: { chromeMediaSource: 'desktop', chromeMediaSourceId: src.id } },
+    });
+
+    captureVideo = document.createElement('video');
+    captureVideo.style.display = 'none';
+    captureVideo.srcObject = stream;
+    captureVideo.autoplay  = true;
+    document.body.appendChild(captureVideo);
+
+    // Canvas for Vision-quality frames
+    captureCanvas = document.createElement('canvas');
+    captureCanvas.width  = SEND_W;
+    captureCanvas.height = SEND_H;
+    captureCtx = captureCanvas.getContext('2d');
+
+    // Small canvas for cheap pixel diffing
+    diffCanvas = document.createElement('canvas');
+    diffCanvas.width  = DIFF_W;
+    diffCanvas.height = DIFF_H;
+    diffCtx = diffCanvas.getContext('2d');
+
+    captureInterval = setInterval(sampleFrame, 500);
+  } catch (err) {
+    console.error('[Wren Vision] Start failed:', err.message);
   }
-});
+}
+
+function stopScreenCapture() {
+  if (captureInterval) { clearInterval(captureInterval); captureInterval = null; }
+  captureVideo?.srcObject?.getTracks().forEach(t => t.stop());
+  captureVideo?.remove();
+  captureVideo = null;
+  lastDiffPixels = null;
+}
+
+async function sampleFrame() {
+  if (!captureVideo?.videoWidth) return;  // video not ready yet
+
+  // Draw to tiny diff canvas
+  diffCtx.drawImage(captureVideo, 0, 0, DIFF_W, DIFF_H);
+  const { data } = diffCtx.getImageData(0, 0, DIFF_W, DIFF_H);
+
+  const changed = lastDiffPixels ? pixelsDiffer(data, lastDiffPixels) : true;
+  lastDiffPixels = new Uint8ClampedArray(data);
+
+  if (!changed)      return;  // screen is static
+  if (visionBusy)    return;  // previous Vision call still in flight
+  if (Date.now() - lastVisionTs < MIN_VISION_GAP_MS) return;  // rate limit
+
+  // Draw full-res frame for Vision
+  captureCtx.drawImage(captureVideo, 0, 0, SEND_W, SEND_H);
+  const base64 = captureCanvas.toDataURL('image/jpeg', 0.75).split(',')[1];
+
+  visionBusy   = true;
+  lastVisionTs = Date.now();
+
+  try {
+    const res = await window.wren.analyzeFrame({
+      base64,
+      currentApp:   activityLog[0]?.app   || null,
+      currentTitle: activityLog[0]?.title || null,
+    });
+    if (res?.observation) {
+      screenObservations.unshift({ text: res.observation, ts: Date.now() });
+      if (screenObservations.length > 30) screenObservations.pop();
+      if (currentUser) {
+        await logActivity({ type: 'screen_observation', observation: res.observation });
+      }
+    }
+  } catch { /* non-fatal */ }
+  finally {
+    visionBusy = false;
+  }
+}
+
+function pixelsDiffer(a, b) {
+  let diff = 0;
+  const samples = a.length / 16;  // sample every 4th pixel (step 16 bytes)
+  for (let i = 0; i < a.length; i += 16) {
+    if (Math.abs(a[i] - b[i]) + Math.abs(a[i+1] - b[i+1]) + Math.abs(a[i+2] - b[i+2]) > 30) diff++;
+  }
+  return diff / samples > DIFF_THRESHOLD;
+}
 
 // ── Activity logging ───────────────────────────────────────────────────────
 
@@ -480,7 +585,9 @@ async function runProactiveCheck() {
 })();
 
 $('settings-screen-capture').addEventListener('change', async (e) => {
-  await window.wren.setScreenCapture(e.target.checked);
+  const on = e.target.checked;
+  await window.wren.setScreenCapture(on);
+  on ? startScreenCapture() : stopScreenCapture();
 });
 
 $('btn-update-key').addEventListener('click', async () => {

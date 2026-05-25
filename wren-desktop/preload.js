@@ -10,17 +10,20 @@ contextBridge.exposeInMainWorld('wren', {
     delete: (key)      => ipcRenderer.invoke('store:delete', key),
   },
 
-  // Wren AI (OpenAI runs in main process)
-  send:      (payload) => ipcRenderer.invoke('wren:send',      payload),
-  proactive: (payload) => ipcRenderer.invoke('wren:proactive', payload),
+  // Wren AI (OpenAI runs in main process — key never touches renderer)
+  send:         (payload) => ipcRenderer.invoke('wren:send',         payload),
+  proactive:    (payload) => ipcRenderer.invoke('wren:proactive',    payload),
+  analyzeFrame: (payload) => ipcRenderer.invoke('wren:analyze-frame', payload),
 
-  // Activity stream from OS-level observer
-  onActivity:            (cb) => ipcRenderer.on('activity:update',   (_, info) => cb(info)),
-  onScreenObservation:   (cb) => ipcRenderer.on('screen:observation', (_, data) => cb(data)),
+  // Screen source ID — renderer needs this to start getUserMedia
+  getSources: () => ipcRenderer.invoke('desktop-capturer:get-sources'),
 
-  // Screen capture controls
-  setScreenCapture:      (enabled) => ipcRenderer.invoke('screen:set-capture',    enabled),
-  getScreenCaptureEnabled:  ()     => ipcRenderer.invoke('screen:capture-enabled'),
+  // Screen capture preference (persisted in electron-store)
+  setScreenCapture:        (enabled) => ipcRenderer.invoke('screen:set-capture',    enabled),
+  getScreenCaptureEnabled: ()        => ipcRenderer.invoke('screen:capture-enabled'),
+
+  // Activity stream from OS-level window observer
+  onActivity: (cb) => ipcRenderer.on('activity:update', (_, info) => cb(info)),
 
   // Window chrome
   hide:     () => ipcRenderer.send('window:hide'),

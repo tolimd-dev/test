@@ -1,21 +1,19 @@
 'use strict';
 
-const { app, BrowserWindow, Tray, Menu, ipcMain, screen } = require('electron');
-const path       = require('path');
-const Store      = require('electron-store');
-const screenshot = require('screenshot-desktop');
-const council    = require('./src/council');
+const { app, BrowserWindow, Tray, Menu, ipcMain, screen, desktopCapturer } = require('electron');
+const path    = require('path');
+const Store   = require('electron-store');
+const council = require('./src/council');
 
 const store = new Store({ name: 'wren-config' });
 
-let mainWindow    = null;
-let tray          = null;
-let isQuitting    = false;
-let activeWinFn   = null;
-let lastWindowKey = '';
+let mainWindow     = null;
+let tray           = null;
+let isQuitting     = false;
+let activeWinFn    = null;
+let lastWindowKey  = '';
 let lastActivityTs = Date.now();
 let observerTimer  = null;
-let captureTimer   = null;
 
 // ── Active window monitoring ───────────────────────────────────────────────
 
@@ -53,45 +51,12 @@ function startObserver() {
   observerTimer = setInterval(observerTick, 8000);
 }
 
-// ── Screen capture → GPT-4o Vision ────────────────────────────────────────
+// ── Screen source (renderer uses this to start video stream) ──────────────
 
-async function screenCaptureTick() {
-  const apiKey = store.get('openaiApiKey');
-  if (!apiKey) return;
-  if (!store.get('screenCaptureEnabled', true)) return;
-
-  // Skip if user has been idle for >5 minutes (no window changes)
-  if (Date.now() - lastActivityTs > 5 * 60 * 1000) return;
-
-  try {
-    const imgBuffer = await screenshot({ format: 'png' });
-    const base64    = imgBuffer.toString('base64');
-    const [appName, ...rest] = lastWindowKey.split('::');
-
-    const observation = await council.analyzeScreen({
-      imageBase64:  base64,
-      currentApp:   appName,
-      currentTitle: rest.join('::'),
-      apiKey,
-    });
-
-    if (observation) {
-      mainWindow?.webContents.send('screen:observation', {
-        observation,
-        app: appName,
-        ts:  Date.now(),
-      });
-    }
-  } catch (err) {
-    // Non-fatal — screenshot can fail if screen is locked or permissions denied
-    console.error('[Wren] Screen capture failed:', err.message);
-  }
-}
-
-function startScreenCapture() {
-  if (captureTimer) return;
-  captureTimer = setInterval(screenCaptureTick, 30000);
-}
+ipcMain.handle('desktop-capturer:get-sources', async () => {
+  const sources = await desktopCapturer.getSources({ types: ['screen'] });
+  return sources.map(s => ({ id: s.id, name: s.name }));
+});
 
 // ── Window ─────────────────────────────────────────────────────────────────
 
@@ -161,13 +126,20 @@ ipcMain.handle('wren:send', async (_, { message, history, context }) => {
   }
 });
 
-ipcMain.handle('screen:set-capture', (_, enabled) => {
-  store.set('screenCaptureEnabled', enabled);
-  if (enabled && !captureTimer) startScreenCapture();
-  if (!enabled && captureTimer)  { clearInterval(captureTimer); captureTimer = null; }
+// Analyze a single frame sent by the renderer — Vision API runs here (where key lives)
+ipcMain.handle('wren:analyze-frame', async (_, { base64, currentApp, currentTitle }) => {
+  const apiKey = store.get('openaiApiKey');
+  if (!apiKey) return { observation: null };
+  try {
+    const observation = await council.analyzeScreen({ imageBase64: base64, currentApp, currentTitle, apiKey });
+    return { observation };
+  } catch {
+    return { observation: null };
+  }
 });
 
-ipcMain.handle('screen:capture-enabled', () => store.get('screenCaptureEnabled', true));
+ipcMain.handle('screen:set-capture',     (_, enabled) => store.set('screenCaptureEnabled', enabled));
+ipcMain.handle('screen:capture-enabled', ()           => store.get('screenCaptureEnabled', true));
 
 ipcMain.handle('wren:proactive', async (_, { context }) => {
   const apiKey = store.get('openaiApiKey');
@@ -186,7 +158,6 @@ app.whenReady().then(() => {
   createWindow();
   createTray();
   startObserver();
-  if (store.get('screenCaptureEnabled', true)) startScreenCapture();
 });
 
 app.on('before-quit', () => { isQuitting = true; });

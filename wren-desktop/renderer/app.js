@@ -256,6 +256,8 @@ async function sendMessage() {
     wrenName:  null,
     wrenColor: null,
   };
+  recentlySaved.add(text);
+  setTimeout(() => recentlySaved.delete(text), 15000);
   appendMessage(userMsg);
   scrollToBottom();
 

@@ -252,7 +252,7 @@ async function analyzeScreen({ imageBase64, currentApp, currentTitle, apiKey }) 
   const client = new OpenAI({ apiKey });
 
   const res = await client.chat.completions.create({
-    model:      'gpt-4o',  // vision requires gpt-4o
+    model:      'gpt-4o-mini',  // cheap test mode — supports vision, 16x cheaper than gpt-4o
     max_tokens: 250,
     messages: [{
       role: 'user',

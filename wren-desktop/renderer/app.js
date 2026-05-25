@@ -380,8 +380,8 @@ const DIFF_W  = 160;   // small canvas for fast pixel diffing
 const DIFF_H  = 90;
 const SEND_W  = 1280;  // resolution sent to Vision
 const SEND_H  = 720;
-const DIFF_THRESHOLD    = 0.03;  // 3% pixels changed = meaningful
-const MIN_VISION_GAP_MS = 5000;  // at most one Vision call per 5s (cost control)
+const DIFF_THRESHOLD    = 0.05;   // 5% pixels changed = meaningful
+const MIN_VISION_GAP_MS = 30000;  // at most one Vision call per 30s (cheap test mode)
 
 let captureVideo    = null;
 let captureCanvas   = null;

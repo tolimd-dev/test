@@ -194,26 +194,43 @@ function loadConversation() {
       if (docs.length === 0) {
         showFirstContact();
       }
+    }, err => {
+      console.error('[Wren] Firestore snapshot error:', err.message);
+      showSystemMessage('Could not reach Firestore — check Firebase rules are published.');
     });
 }
 
 // ── First contact ──────────────────────────────────────────────────────────
 
+const FALLBACK_INTRO = "Hi — I'm Wren. I'm watching your workflow across every app you're in, and I'll speak up when I see something worth talking about. You can also just ask me anything. What are you working on?";
+
 async function showFirstContact() {
-  const context = buildContext();
-  const res = await window.wren.send({
-    message: `The doctor is opening Wren for the first time. Introduce yourself in 2-3 sentences. Tell them who you are (the Council of Wrens — a team of specialized AI partners), that you're watching their workflow, and that you'll speak up when you have something worth saying. Keep it warm and brief.`,
-    history: [],
-    context,
-  });
-  if (res.reply) {
+  try {
+    const res = await window.wren.send({
+      message: `The doctor is opening Wren for the first time. Introduce yourself in 2-3 sentences. Tell them who you are (the Council of Wrens — a team of specialized AI partners), that you're watching their workflow across every app on their computer, and that you'll speak up when you have something worth saying. Keep it warm and brief.`,
+      history: [],
+      context: buildContext(),
+    });
+
+    if (res.error === 'no_key') {
+      showSystemMessage('OpenAI key not found — go to Settings and paste your sk-... key.');
+      return;
+    }
+
+    const content = res.reply || FALLBACK_INTRO;
     await saveAndDisplayMessage({
-      role:       'assistant',
-      content:    res.reply,
-      wren:       res.wren      || 'designer',
-      wrenName:   res.wrenName  || 'Designer',
-      wrenColor:  res.wrenColor || WREN_COLORS.designer,
-      proactive:  true,
+      role:      'assistant',
+      content,
+      wren:      res.wren      || 'designer',
+      wrenName:  res.wrenName  || 'Designer',
+      wrenColor: res.wrenColor || WREN_COLORS.designer,
+      proactive: true,
+    });
+  } catch (err) {
+    console.error('[Wren] First contact failed:', err.message);
+    await saveAndDisplayMessage({
+      role: 'assistant', content: FALLBACK_INTRO,
+      wren: 'designer', wrenName: 'Designer', wrenColor: WREN_COLORS.designer, proactive: true,
     });
   }
 }

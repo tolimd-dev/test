@@ -17,11 +17,12 @@ const db   = firebase.firestore();
 
 // ── State ──────────────────────────────────────────────────────────────────
 
-let currentUser       = null;
-let messageHistory    = [];   // { role, content, wren, wrenName, wrenColor, ts }
-let activityLog       = [];   // recent window events from OS observer
-let screenObservations = [];  // what GPT-4o Vision has seen recently
-let messagesUnsub     = null; // Firestore listener unsubscribe
+let currentUser        = null;
+let messageHistory     = [];   // { role, content, wren, wrenName, wrenColor, ts }
+let activityLog        = [];   // recent window events from OS observer
+let screenObservations = [];   // what GPT-4o Vision has seen recently
+let messagesUnsub      = null; // Firestore listener unsubscribe
+const recentlySaved    = new Set(); // content fingerprints rendered locally, awaiting Firestore confirm
 
 const WREN_COLORS = {
   designer:   '#10b981',
@@ -182,10 +183,13 @@ function loadConversation() {
       }
 
       docs.forEach(msg => {
-        if (!messageHistory.find(m => m.id === msg.id)) {
+        const already = messageHistory.find(m => m.id === msg.id);
+        const justSaved = recentlySaved.has(msg.content);
+        if (!already && !justSaved) {
           messageHistory.push(msg);
           appendMessage(msg);
         }
+        recentlySaved.delete(msg.content); // confirmed by Firestore, safe to clear
       });
 
       scrollToBottom();
@@ -307,6 +311,10 @@ async function sendMessage() {
 // ── Save message to Firestore + display ────────────────────────────────────
 
 async function saveAndDisplayMessage(msg) {
+  // Track content so onSnapshot doesn't double-render when Firestore confirms
+  recentlySaved.add(msg.content);
+  setTimeout(() => recentlySaved.delete(msg.content), 15000);
+
   let id = `local-${Date.now()}`;
   try {
     const ref = await db

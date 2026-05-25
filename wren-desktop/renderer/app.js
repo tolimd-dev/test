@@ -256,16 +256,17 @@ async function sendMessage() {
     wrenName:  null,
     wrenColor: null,
   };
-  recentlySaved.add(text);
-  setTimeout(() => recentlySaved.delete(text), 15000);
   appendMessage(userMsg);
   scrollToBottom();
 
-  // Save user message to Firestore
-  await db.collection('conversations').doc(currentUser.uid).collection('messages').add({
-    ...userMsg,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-  });
+  // Save to Firestore and track in messageHistory so onSnapshot deduplicates by ID
+  try {
+    const ref = await db.collection('conversations').doc(currentUser.uid).collection('messages').add({
+      ...userMsg,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    messageHistory.push({ id: ref.id, ...userMsg });
+  } catch { /* non-critical */ }
 
   // Log activity
   await logActivity({ type: 'wren_message', content: text });

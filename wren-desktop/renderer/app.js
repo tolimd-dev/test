@@ -290,15 +290,19 @@ async function sendMessage() {
 // ── Save message to Firestore + display ────────────────────────────────────
 
 async function saveAndDisplayMessage(msg) {
-  const ref = await db
-    .collection('conversations')
-    .doc(currentUser.uid)
-    .collection('messages')
-    .add({
-      ...msg,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    });
-  const full = { id: ref.id, ...msg };
+  let id = `local-${Date.now()}`;
+  try {
+    const ref = await db
+      .collection('conversations')
+      .doc(currentUser.uid)
+      .collection('messages')
+      .add({
+        ...msg,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+    id = ref.id;
+  } catch { /* Firestore write failed — still show message locally */ }
+  const full = { id, ...msg };
   messageHistory.push(full);
   appendMessage(full);
   return full;

@@ -17,10 +17,11 @@ const db   = firebase.firestore();
 
 // ── State ──────────────────────────────────────────────────────────────────
 
-let currentUser      = null;
-let messageHistory   = [];   // { role, content, wren, wrenName, wrenColor, ts }
-let activityLog      = [];   // recent window events from OS observer
-let messagesUnsub    = null; // Firestore listener unsubscribe
+let currentUser       = null;
+let messageHistory    = [];   // { role, content, wren, wrenName, wrenColor, ts }
+let activityLog       = [];   // recent window events from OS observer
+let screenObservations = [];  // what GPT-4o Vision has seen recently
+let messagesUnsub     = null; // Firestore listener unsubscribe
 
 const WREN_COLORS = {
   designer:   '#10b981',
@@ -368,6 +369,18 @@ function scrollToBottom() {
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
+// ── Screen observation listener ────────────────────────────────────────────
+
+window.wren.onScreenObservation(async (data) => {
+  screenObservations.unshift({ text: data.observation, app: data.app, ts: data.ts });
+  if (screenObservations.length > 30) screenObservations.pop();
+
+  // Log to Firestore (observation text only — never the screenshot)
+  if (currentUser) {
+    await logActivity({ type: 'screen_observation', observation: data.observation, app: data.app });
+  }
+});
+
 // ── Activity logging ───────────────────────────────────────────────────────
 
 window.wren.onActivity(async (info) => {
@@ -419,9 +432,10 @@ function formatTime(ts) {
 function buildContext() {
   const current = activityLog[0] || null;
   return {
-    currentApp:    current?.app   || null,
-    currentTitle:  current?.title || null,
-    recentActivity: activityLog.slice(0, 20).map(a => ({ app: a.app, title: a.title })),
+    currentApp:         current?.app   || null,
+    currentTitle:       current?.title || null,
+    recentActivity:     activityLog.slice(0, 20).map(a => ({ app: a.app, title: a.title })),
+    screenObservations: screenObservations.slice(0, 10).map(o => o.text),
   };
 }
 
@@ -457,11 +471,17 @@ async function runProactiveCheck() {
 // ── Settings ───────────────────────────────────────────────────────────────
 
 (async () => {
-  const key   = await window.wren.store.get('openaiApiKey')  || '';
-  const model = await window.wren.store.get('openaiModel')   || 'gpt-4o-mini';
-  $('settings-apikey').value = key ? '••••••••' : '';
-  $('settings-model').value  = model;
+  const key     = await window.wren.store.get('openaiApiKey') || '';
+  const model   = await window.wren.store.get('openaiModel')  || 'gpt-4o-mini';
+  const capture = await window.wren.getScreenCaptureEnabled();
+  $('settings-apikey').value         = key ? '••••••••' : '';
+  $('settings-model').value          = model;
+  $('settings-screen-capture').checked = capture !== false;
 })();
+
+$('settings-screen-capture').addEventListener('change', async (e) => {
+  await window.wren.setScreenCapture(e.target.checked);
+});
 
 $('btn-update-key').addEventListener('click', async () => {
   const key = $('settings-apikey').value.trim();

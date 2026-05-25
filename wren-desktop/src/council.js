@@ -181,6 +181,11 @@ function buildContextBlock(context) {
     lines.push(`Recent apps (last session): ${apps}`);
   }
 
+  if (context.screenObservations?.length) {
+    lines.push(`What you've seen on screen (most recent first):`);
+    context.screenObservations.slice(0, 5).forEach(o => lines.push(`  • ${o}`));
+  }
+
   return lines.length
     ? `\n\nWHAT YOU'VE OBSERVED RECENTLY:\n${lines.map(l => `- ${l}`).join('\n')}`
     : '';
@@ -241,4 +246,43 @@ Rules:
   return { observation: text, wren: 'designer', wrenName: 'Designer', wrenColor: WRENS.designer.color };
 }
 
-module.exports = { processMessage, designerProactive, WRENS };
+// ── Screen capture analysis (GPT-4o Vision) ───────────────────────────────
+
+async function analyzeScreen({ imageBase64, currentApp, currentTitle, apiKey }) {
+  const client = new OpenAI({ apiKey });
+
+  const res = await client.chat.completions.create({
+    model:      'gpt-4o',  // vision requires gpt-4o
+    max_tokens: 250,
+    messages: [{
+      role: 'user',
+      content: [
+        {
+          type: 'image_url',
+          image_url: {
+            url:    `data:image/png;base64,${imageBase64}`,
+            detail: 'low',  // ~85 tokens/image — cheap and fast
+          },
+        },
+        {
+          type: 'text',
+          text: `You are Wren the Designer watching a DPC physician's screen.
+Active app: ${currentApp || 'unknown'}${currentTitle ? ` — "${currentTitle}"` : ''}
+
+Describe in 1-3 sentences what the doctor is doing right now. Be specific:
+- Which tool or document is open and what's visible
+- What action they appear to be taking (composing a message, reviewing a chart, filling a form, reading lab results, etc.)
+- Any patient name or clinical context visible in the title or on screen
+
+If nothing clinical is visible (browser settings, system UI, file explorer), respond with exactly: NO_CLINICAL_ACTIVITY`,
+        },
+      ],
+    }],
+  });
+
+  const text = res.choices?.[0]?.message?.content?.trim();
+  if (!text || text === 'NO_CLINICAL_ACTIVITY') return null;
+  return text;
+}
+
+module.exports = { processMessage, designerProactive, analyzeScreen, WRENS };

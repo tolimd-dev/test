@@ -15,7 +15,12 @@ contextBridge.exposeInMainWorld('wren', {
   proactive: (payload) => ipcRenderer.invoke('wren:proactive', payload),
 
   // Activity stream from OS-level observer
-  onActivity: (cb) => ipcRenderer.on('activity:update', (_, info) => cb(info)),
+  onActivity:            (cb) => ipcRenderer.on('activity:update',   (_, info) => cb(info)),
+  onScreenObservation:   (cb) => ipcRenderer.on('screen:observation', (_, data) => cb(data)),
+
+  // Screen capture controls
+  setScreenCapture:      (enabled) => ipcRenderer.invoke('screen:set-capture',    enabled),
+  getScreenCaptureEnabled:  ()     => ipcRenderer.invoke('screen:capture-enabled'),
 
   // Window chrome
   hide:     () => ipcRenderer.send('window:hide'),

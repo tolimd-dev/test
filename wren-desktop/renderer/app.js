@@ -400,23 +400,42 @@ let lastVisionTs    = 0;
 let visionBusy      = false;
 let captureInterval = null;
 
+function updateVisionStatus(text, isError = false) {
+  const el = $('vision-status');
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'vision-status-badge ' + (isError ? 'vision-error' : text === 'active' ? 'vision-active' : 'vision-pending');
+}
+
+function updateVisionLastSeen(text) {
+  const el = $('vision-last-seen');
+  if (el) el.textContent = text;
+}
+
 async function startScreenCapture() {
   if (captureInterval) return;
+  updateVisionStatus('starting…');
   try {
-    const sources = await window.wren.getSources();
-    const src = sources.find(s => /screen|entire|display/i.test(s.name)) || sources[0];
-    if (!src) { console.warn('[Wren Vision] No screen source found'); return; }
-
-    const stream = await navigator.mediaDevices.getUserMedia({
+    // getDisplayMedia is the modern Electron approach — main process intercepts
+    // via setDisplayMediaRequestHandler and auto-selects the primary screen.
+    const stream = await navigator.mediaDevices.getDisplayMedia({
+      video: true,
       audio: false,
-      video: { mandatory: { chromeMediaSource: 'desktop', chromeMediaSourceId: src.id } },
     });
 
     captureVideo = document.createElement('video');
     captureVideo.style.display = 'none';
+    captureVideo.muted  = true;
     captureVideo.srcObject = stream;
     captureVideo.autoplay  = true;
     document.body.appendChild(captureVideo);
+
+    await new Promise((resolve, reject) => {
+      captureVideo.onloadedmetadata = resolve;
+      captureVideo.onerror = (e) => reject(new Error('Video error: ' + e));
+      setTimeout(() => reject(new Error('Video timed out after 10s')), 10000);
+    });
+    await captureVideo.play().catch(() => {});
 
     // Canvas for Vision-quality frames
     captureCanvas = document.createElement('canvas');
@@ -431,8 +450,14 @@ async function startScreenCapture() {
     diffCtx = diffCanvas.getContext('2d');
 
     captureInterval = setInterval(sampleFrame, 500);
+    updateVisionStatus('active');
+    console.log('[Wren Vision] Screen capture started, video size:', captureVideo.videoWidth, 'x', captureVideo.videoHeight);
   } catch (err) {
-    console.error('[Wren Vision] Start failed:', err.message);
+    const msg = err.name === 'NotAllowedError' ? 'permission denied' :
+                err.name === 'NotFoundError'   ? 'no screen source found' :
+                err.message || err.name;
+    console.error('[Wren Vision] Start failed:', err.name, err.message);
+    updateVisionStatus('error: ' + msg, true);
   }
 }
 
@@ -474,12 +499,15 @@ async function sampleFrame() {
     if (res?.observation) {
       screenObservations.unshift({ text: res.observation, ts: Date.now() });
       if (screenObservations.length > 30) screenObservations.pop();
+      updateVisionLastSeen(res.observation.slice(0, 120));
       if (currentUser) {
         await logActivity({ type: 'screen_observation', observation: res.observation });
       }
     }
-  } catch { /* non-fatal */ }
-  finally {
+  } catch (err) {
+    console.error('[Wren Vision] analyzeFrame error:', err.message);
+    updateVisionStatus('error: ' + err.message, true);
+  } finally {
     visionBusy = false;
   }
 }

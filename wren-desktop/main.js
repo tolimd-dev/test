@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, Tray, Menu, ipcMain, screen, desktopCapturer } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, screen, desktopCapturer, session } = require('electron');
 const path    = require('path');
 const Store   = require('electron-store');
 const council = require('./src/council');
@@ -155,6 +155,15 @@ ipcMain.handle('wren:proactive', async (_, { context }) => {
 // ── App lifecycle ──────────────────────────────────────────────────────────
 
 app.whenReady().then(() => {
+  // Auto-approve screen capture — renderer uses getDisplayMedia, this auto-selects
+  // the primary screen without showing the OS picker. Safe because this is a trusted
+  // local app, not a website.
+  session.defaultSession.setDisplayMediaRequestHandler((request, callback) => {
+    desktopCapturer.getSources({ types: ['screen'] })
+      .then(sources => callback({ video: sources[0] }))
+      .catch(() => callback({}));
+  });
+
   createWindow();
   createTray();
   startObserver();

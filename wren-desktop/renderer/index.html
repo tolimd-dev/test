@@ -80,15 +80,31 @@
 
     <!-- Activity view -->
     <div id="view-activity" class="view hidden">
-      <div id="vision-status-section">
-        <div class="vision-status-row">
-          <span class="vision-label">Vision</span>
-          <span id="vision-status" class="vision-status-badge vision-pending">not started</span>
+
+      <!-- Vision (screen recording) -->
+      <div class="monitor-section">
+        <div class="monitor-header">
+          <div class="monitor-title-row">
+            <span class="monitor-title">Vision</span>
+            <span id="vision-status" class="status-badge status-pending">not started</span>
+          </div>
+          <p class="monitor-desc">Screen recording — Wren reads what's on your screen every 30s so she knows what you're actually doing, not just which app is open.</p>
         </div>
-        <div id="vision-last-seen" class="vision-last-seen"></div>
+        <div id="vision-last-seen" class="monitor-last-seen">No observations yet.</div>
       </div>
-      <h3>Recent activity</h3>
-      <div id="activity-list"></div>
+
+      <!-- Active Window monitoring -->
+      <div class="monitor-section">
+        <div class="monitor-header">
+          <div class="monitor-title-row">
+            <span class="monitor-title">Active Window</span>
+            <span id="window-status" class="status-badge status-active">monitoring</span>
+          </div>
+          <p class="monitor-desc">App focus tracking — records which app and window title is in the foreground every 8s. No screen content, just app names.</p>
+        </div>
+        <div id="activity-list"></div>
+      </div>
+
     </div>
 
     <!-- Settings view -->

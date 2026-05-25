@@ -404,7 +404,23 @@ function updateVisionStatus(text, isError = false) {
   const el = $('vision-status');
   if (!el) return;
   el.textContent = text;
-  el.className = 'vision-status-badge ' + (isError ? 'vision-error' : text === 'active' ? 'vision-active' : 'vision-pending');
+  el.className = 'status-badge ' + (
+    isError           ? 'status-error'  :
+    text === 'active' ? 'status-active' :
+    text === 'paused' ? 'status-paused' :
+                        'status-pending'
+  );
+}
+
+function updateWindowStatus(text) {
+  const el = $('window-status');
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'status-badge ' + (
+    text === 'monitoring' ? 'status-active' :
+    text === 'paused'     ? 'status-paused' :
+                            'status-pending'
+  );
 }
 
 function updateVisionLastSeen(text) {
@@ -520,6 +536,20 @@ function pixelsDiffer(a, b) {
   }
   return diff / samples > DIFF_THRESHOLD;
 }
+
+// ── Pause / resume (from tray menu) ───────────────────────────────────────
+
+window.wren.onPause(() => {
+  stopScreenCapture();
+  updateVisionStatus('paused');
+  updateWindowStatus('paused');
+});
+
+window.wren.onResume(async () => {
+  updateWindowStatus('monitoring');
+  const on = await window.wren.getScreenCaptureEnabled();
+  if (on !== false) startScreenCapture();
+});
 
 // ── Activity logging ───────────────────────────────────────────────────────
 

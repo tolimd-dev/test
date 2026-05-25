@@ -25,6 +25,10 @@ contextBridge.exposeInMainWorld('wren', {
   // Activity stream from OS-level window observer
   onActivity: (cb) => ipcRenderer.on('activity:update', (_, info) => cb(info)),
 
+  // Pause / resume (triggered from tray menu)
+  onPause:  (cb) => ipcRenderer.on('wren:pause',  () => cb()),
+  onResume: (cb) => ipcRenderer.on('wren:resume', () => cb()),
+
   // Window chrome
   hide:     () => ipcRenderer.send('window:hide'),
   minimize: () => ipcRenderer.send('window:minimize'),

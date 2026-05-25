@@ -10,6 +10,7 @@ const store = new Store({ name: 'wren-config' });
 let mainWindow     = null;
 let tray           = null;
 let isQuitting     = false;
+let isPaused       = false;
 let activeWinFn    = null;
 let lastWindowKey  = '';
 let lastActivityTs = Date.now();
@@ -85,17 +86,43 @@ function createWindow() {
   });
 }
 
+// ── Pause / resume ─────────────────────────────────────────────────────────
+
+function pauseWren() {
+  isPaused = true;
+  if (observerTimer) { clearInterval(observerTimer); observerTimer = null; }
+  mainWindow?.webContents.send('wren:pause');
+  updateTrayMenu();
+  tray?.setToolTip('Wren (paused)');
+}
+
+function resumeWren() {
+  isPaused = false;
+  startObserver();
+  mainWindow?.webContents.send('wren:resume');
+  updateTrayMenu();
+  tray?.setToolTip('Wren');
+}
+
 // ── Tray ───────────────────────────────────────────────────────────────────
+
+function updateTrayMenu() {
+  tray?.setContextMenu(Menu.buildFromTemplate([
+    { label: 'Open Wren', click: () => { mainWindow.show(); mainWindow.focus(); } },
+    { type: 'separator' },
+    isPaused
+      ? { label: 'Resume Wren',        click: resumeWren }
+      : { label: 'Pause Wren (private mode)', click: pauseWren },
+    { type: 'separator' },
+    { label: 'Quit Wren', click: () => { isQuitting = true; app.quit(); } },
+  ]));
+}
 
 function createTray() {
   const iconPath = path.join(__dirname, '..', 'dpc-workflow-observer', 'icons', 'icon16.png');
   tray = new Tray(iconPath);
   tray.setToolTip('Wren');
-  tray.setContextMenu(Menu.buildFromTemplate([
-    { label: 'Open Wren', click: () => { mainWindow.show(); mainWindow.focus(); } },
-    { type: 'separator' },
-    { label: 'Quit Wren', click: () => { isQuitting = true; app.quit(); } },
-  ]));
+  updateTrayMenu();
   tray.on('click', () =>
     mainWindow.isVisible() ? mainWindow.hide() : (mainWindow.show(), mainWindow.focus())
   );

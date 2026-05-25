@@ -18,11 +18,9 @@ const db   = firebase.firestore();
 // ── State ──────────────────────────────────────────────────────────────────
 
 let currentUser        = null;
-let messageHistory     = [];   // { role, content, wren, wrenName, wrenColor, ts }
-let activityLog        = [];   // recent window events from OS observer
-let screenObservations = [];   // what GPT-4o Vision has seen recently
-let messagesUnsub      = null; // Firestore listener unsubscribe
-const recentlySaved    = new Set(); // content fingerprints rendered locally, awaiting Firestore confirm
+let messageHistory     = [];  // { role, content, wren, wrenName, wrenColor, ts }
+let activityLog        = [];  // recent window events from OS observer
+let screenObservations = [];  // what GPT-4o Vision has seen recently
 
 const WREN_COLORS = {
   designer:   '#10b981',
@@ -120,7 +118,6 @@ $('btn-save-key').addEventListener('click', async () => {
 });
 
 $('btn-signout').addEventListener('click', async () => {
-  if (messagesUnsub) { messagesUnsub(); messagesUnsub = null; }
   stopScreenCapture();
   await auth.signOut();
 });
@@ -158,50 +155,32 @@ function friendlyAuthError(code) {
 }
 
 // ── Load conversation from Firestore ───────────────────────────────────────
+// One-time load on startup only. New messages are rendered locally and
+// saved to Firestore in the background — no live listener needed.
 
-function loadConversation() {
-  if (messagesUnsub) messagesUnsub();
-
+async function loadConversation() {
   messagesEl.innerHTML = '';
   messageHistory = [];
 
-  messagesUnsub = db
-    .collection('conversations')
-    .doc(currentUser.uid)
-    .collection('messages')
-    .orderBy('createdAt', 'asc')
-    .limit(100)
-    .onSnapshot(snap => {
-      // On first load, render all messages
-      // On subsequent updates, just append new ones
-      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  try {
+    const snap = await db
+      .collection('conversations')
+      .doc(currentUser.uid)
+      .collection('messages')
+      .orderBy('createdAt', 'asc')
+      .limit(100)
+      .get();
 
-      // Rebuild if count changed significantly (e.g. clear)
-      if (Math.abs(docs.length - messageHistory.length) > 1) {
-        messagesEl.innerHTML = '';
-        messageHistory = [];
-      }
+    messageHistory = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    messageHistory.forEach(appendMessage);
+    scrollToBottom();
 
-      docs.forEach(msg => {
-        const already = messageHistory.find(m => m.id === msg.id);
-        const justSaved = recentlySaved.has(msg.content);
-        if (!already && !justSaved) {
-          messageHistory.push(msg);
-          appendMessage(msg);
-        }
-        recentlySaved.delete(msg.content); // confirmed by Firestore, safe to clear
-      });
-
-      scrollToBottom();
-
-      // Show first-contact message if no history
-      if (docs.length === 0) {
-        showFirstContact();
-      }
-    }, err => {
-      console.error('[Wren] Firestore snapshot error:', err.message);
-      showSystemMessage('Could not reach Firestore — check Firebase rules are published.');
-    });
+    if (messageHistory.length === 0) showFirstContact();
+  } catch (err) {
+    console.error('[Wren] Firestore load error:', err.message);
+    showSystemMessage('Could not load conversation history — check Firebase rules.');
+    showFirstContact();
+  }
 }
 
 // ── First contact ──────────────────────────────────────────────────────────
@@ -314,10 +293,6 @@ async function sendMessage() {
 // ── Save message to Firestore + display ────────────────────────────────────
 
 async function saveAndDisplayMessage(msg) {
-  // Track content so onSnapshot doesn't double-render when Firestore confirms
-  recentlySaved.add(msg.content);
-  setTimeout(() => recentlySaved.delete(msg.content), 15000);
-
   let id = `local-${Date.now()}`;
   try {
     const ref = await db

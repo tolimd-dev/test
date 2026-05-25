@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wren</title>
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Firebase compat SDK (covered by Google Workspace BAA) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+  <!-- ── Title bar ── -->
+  <div id="titlebar">
+    <div id="titlebar-left">
+      <span id="wren-badge"></span>
+      <span id="titlebar-title">Wren</span>
+    </div>
+    <div id="titlebar-controls">
+      <button id="btn-minimize" title="Minimize">─</button>
+      <button id="btn-hide"     title="Hide to tray">✕</button>
+    </div>
+  </div>
+
+  <!-- ── Auth screen ── -->
+  <div id="auth-screen" class="hidden">
+    <div id="auth-card">
+      <div id="auth-logo">W</div>
+      <h2>Sign in to Wren</h2>
+      <p id="auth-subtitle">Use your Mila Family Health Google Workspace email</p>
+
+      <div id="auth-error" class="hidden"></div>
+
+      <input type="email"    id="auth-email"    placeholder="Email" autocomplete="email">
+      <input type="password" id="auth-password" placeholder="Password" autocomplete="current-password">
+      <button id="btn-signin">Sign in</button>
+      <button id="btn-signup" class="secondary">Create account</button>
+
+      <div id="key-section" class="hidden">
+        <hr>
+        <p>OpenAI API key (stored locally, never leaves this device)</p>
+        <input type="password" id="auth-apikey" placeholder="sk-...">
+        <button id="btn-save-key">Save key &amp; continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Main app ── -->
+  <div id="app" class="hidden">
+
+    <!-- Sidebar nav -->
+    <div id="sidebar">
+      <button class="nav-btn active" data-view="chat"     title="Chat">💬</button>
+      <button class="nav-btn"        data-view="activity" title="Activity">👁</button>
+      <button class="nav-btn"        data-view="settings" title="Settings">⚙</button>
+    </div>
+
+    <!-- Chat view -->
+    <div id="view-chat" class="view active">
+      <div id="council-bar">
+        <span id="active-wren-label">Council of Wrens</span>
+        <div id="council-dots">
+          <span class="dot" data-wren="designer"   title="Designer">D</span>
+          <span class="dot" data-wren="builder"    title="Builder">B</span>
+          <span class="dot" data-wren="compliance" title="Compliance">C</span>
+          <span class="dot" data-wren="security"   title="Security">S</span>
+        </div>
+      </div>
+
+      <div id="messages"></div>
+
+      <div id="input-area">
+        <textarea id="msg-input" placeholder="Ask Wren anything…" rows="1"></textarea>
+        <button id="btn-send">↑</button>
+      </div>
+    </div>
+
+    <!-- Activity view -->
+    <div id="view-activity" class="view hidden">
+      <h3>Recent activity</h3>
+      <div id="activity-list"></div>
+    </div>
+
+    <!-- Settings view -->
+    <div id="view-settings" class="view hidden">
+      <h3>Settings</h3>
+
+      <label>OpenAI API key</label>
+      <div class="key-row">
+        <input type="password" id="settings-apikey" placeholder="sk-...">
+        <button id="btn-update-key">Save</button>
+      </div>
+
+      <label>Model</label>
+      <select id="settings-model">
+        <option value="gpt-4o-mini">GPT-4o mini (faster, cheaper)</option>
+        <option value="gpt-4o">GPT-4o (smarter, slower)</option>
+      </select>
+      <button id="btn-save-model">Save model</button>
+
+      <hr>
+
+      <label>Signed in as</label>
+      <div id="settings-user"></div>
+      <button id="btn-signout" class="danger">Sign out</button>
+
+      <hr>
+
+      <button id="btn-clear-chat" class="secondary">Clear conversation history</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

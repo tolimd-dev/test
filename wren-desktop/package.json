@@ -1,0 +1,33 @@
+{
+  "name": "wren-desktop",
+  "version": "0.1.0",
+  "description": "Wren — DPC AI practice partner for Mila Family Health",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac"
+  },
+  "build": {
+    "appId": "com.milafamilyhealth.wren",
+    "productName": "Wren",
+    "directories": { "output": "dist" },
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icon.icns"
+    }
+  },
+  "dependencies": {
+    "active-win": "^8.2.0",
+    "electron-store": "^8.2.0",
+    "openai": "^4.52.7"
+  },
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3"
+  }
+}

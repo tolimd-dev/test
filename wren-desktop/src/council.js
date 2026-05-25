@@ -146,23 +146,13 @@ async function callOpenAI({ apiKey, model, systemPrompt, messages, maxTokens = 1
   return text;
 }
 
-// ── Coordinator routing ────────────────────────────────────────────────────
+// ── Coordinator routing (keyword-based, no API call) ──────────────────────
 
-async function route({ message, apiKey, model }) {
-  try {
-    const raw = await callOpenAI({
-      apiKey,
-      model,
-      systemPrompt: WRENS.coordinator.system,
-      messages: [{ role: 'user', content: message }],
-      maxTokens: 100,
-    });
-    const parsed = JSON.parse(raw);
-    const member = parsed.route && WRENS[parsed.route] ? parsed.route : 'designer';
-    return member;
-  } catch {
-    return 'designer'; // fallback
-  }
+function route({ message }) {
+  if (/build|code|script|automat|deploy|function|write.*code|apps script|google sheet/i.test(message)) return 'builder';
+  if (/hipaa|baa|complian|audit|legal|privacy|documentation|business associate/i.test(message))        return 'compliance';
+  if (/security|encrypt|breach|access|password|exposed|phi.*flow|data.*leak/i.test(message))           return 'security';
+  return 'designer';
 }
 
 // ── Build context string for system prompt ─────────────────────────────────
@@ -194,8 +184,8 @@ function buildContextBlock(context) {
 // ── Main entry point ───────────────────────────────────────────────────────
 
 async function processMessage({ message, history = [], context = {}, apiKey, model }) {
-  // Route to the right Wren
-  const member  = await route({ message, apiKey, model });
+  // Route to the right Wren (instant keyword match — no extra API call)
+  const member  = route({ message });
   const wren    = WRENS[member];
 
   const systemPrompt = wren.system + buildContextBlock(context);

@@ -115,7 +115,7 @@ $('btn-save-key').addEventListener('click', async () => {
   const key = $('auth-apikey').value.trim();
   if (!key.startsWith('sk-')) return showAuthError('Paste your OpenAI API key (starts with sk-).');
   await window.wren.store.set('openaiApiKey', key);
-  // Auth state change will fire showApp
+  showApp(auth.currentUser);
 });
 
 $('btn-signout').addEventListener('click', async () => {

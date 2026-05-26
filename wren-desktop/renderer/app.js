@@ -370,7 +370,7 @@ function highlightActiveDot(wren) {
   councilDots.forEach(d => {
     d.classList.toggle('active', d.dataset.wren === wren);
   });
-  const wrenDef = { designer: 'Designer', builder: 'Builder', compliance: 'Compliance', security: 'Security' };
+  const wrenDef = { designer: 'Lucas', builder: 'Builder', compliance: 'Compliance', security: 'Security' };
   $('active-wren-label').textContent = wrenDef[wren] || 'Wren';
 }
 

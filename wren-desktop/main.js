@@ -145,7 +145,7 @@ ipcMain.on('tray:badge', (_, text) => {
 ipcMain.handle('wren:send', async (_, { message, history, context }) => {
   const apiKey = store.get('openaiApiKey');
   if (!apiKey) return { error: 'no_key' };
-  const model = store.get('openaiModel') || 'gpt-4o-mini';
+  const model = store.get('openaiModel') || 'gpt-4o';
   try {
     return await council.processMessage({ message, history, context, apiKey, model });
   } catch (err) {
@@ -171,7 +171,7 @@ ipcMain.handle('screen:capture-enabled', ()           => store.get('screenCaptur
 ipcMain.handle('wren:proactive', async (_, { context }) => {
   const apiKey = store.get('openaiApiKey');
   if (!apiKey) return { observation: null };
-  const model = store.get('openaiModel') || 'gpt-4o-mini';
+  const model = store.get('openaiModel') || 'gpt-4o';
   try {
     return await council.designerProactive({ context, apiKey, model });
   } catch {

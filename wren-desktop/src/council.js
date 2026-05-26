@@ -56,6 +56,9 @@ Challenge before building. When someone proposes a solution, your first move is 
 DPC design principles:
 In DPC, the relationship IS the product. Every tool that makes the doctor feel more like an administrator and less like a doctor is eroding the value proposition. Every design decision should ask: does this make the doctor more present with patients, or less? The chart is a tool for thinking, not a form to fill. The inbox is a conversation, not a queue.
 
+USING SCREEN CONTEXT:
+When your context includes "SCREEN RIGHT NOW", that is what was literally on the doctor's screen the moment they sent you this message. If they say "see that?" or "what do you think of this?" or reference something without explaining it — that's what they mean. Describe what you see, then respond to it. Don't ask them to explain what you can already read.
+
 YOUR APPROACH:
 - You're a peer, not a consultant. Strong opinions, defended.
 - You ask the question behind the question.
@@ -182,26 +185,31 @@ function route({ message }) {
 // ── Build context string for system prompt ─────────────────────────────────
 
 function buildContextBlock(context) {
-  if (!context || (!context.recentActivity?.length && !context.currentApp)) return '';
+  if (!context) return '';
 
   const lines = [];
 
+  // This was captured the instant the doctor sent their message — treat it as ground truth.
+  if (context.currentView) {
+    lines.push(`SCREEN RIGHT NOW (captured this moment): ${context.currentView}`);
+  }
+
   if (context.currentApp) {
-    lines.push(`Currently active: ${context.currentApp}${context.currentTitle ? ` — "${context.currentTitle}"` : ''}`);
+    lines.push(`Active app: ${context.currentApp}${context.currentTitle ? ` — "${context.currentTitle}"` : ''}`);
+  }
+
+  if (context.screenObservations?.length) {
+    lines.push(`Recent screen observations (most recent first):`);
+    context.screenObservations.slice(0, 8).forEach(o => lines.push(`  • ${o}`));
   }
 
   if (context.recentActivity?.length) {
     const apps = [...new Set(context.recentActivity.slice(0, 20).map(a => a.app))].join(', ');
-    lines.push(`Recent apps (last session): ${apps}`);
-  }
-
-  if (context.screenObservations?.length) {
-    lines.push(`What you've seen on screen (most recent first):`);
-    context.screenObservations.slice(0, 5).forEach(o => lines.push(`  • ${o}`));
+    lines.push(`Apps used this session: ${apps}`);
   }
 
   return lines.length
-    ? `\n\nWHAT YOU'VE OBSERVED RECENTLY:\n${lines.map(l => `- ${l}`).join('\n')}`
+    ? `\n\nWHAT YOU'RE SEEING:\n${lines.join('\n')}`
     : '';
 }
 
@@ -280,15 +288,16 @@ async function analyzeScreen({ imageBase64, currentApp, currentTitle, apiKey }) 
         },
         {
           type: 'text',
-          text: `You are Wren the Designer watching a DPC physician's screen.
+          text: `You are Lucas, a design strategist watching a DPC physician's screen.
 Active app: ${currentApp || 'unknown'}${currentTitle ? ` — "${currentTitle}"` : ''}
 
-Describe in 1-3 sentences what the doctor is doing right now. Be specific:
-- Which tool or document is open and what's visible
-- What action they appear to be taking (composing a message, reviewing a chart, filling a form, reading lab results, etc.)
-- Any patient name or clinical context visible in the title or on screen
+Describe in 2-4 sentences exactly what the doctor is doing right now. Be clinically specific:
+- Which tool/document is open and what's visible (patient name, message thread, lab values, chart section, form fields, etc.)
+- What action they appear to be taking: composing a reply, reading a message, reviewing results, updating a chart, filling a form, waiting, scrolling, etc.
+- Any visible workflow friction: multiple windows stacked, incomplete fields, long lists to scroll, unclear next step
+- The clinical context if readable: type of visit, condition, what the patient asked, what the result shows
 
-If nothing clinical is visible (browser settings, system UI, file explorer), respond with exactly: NO_CLINICAL_ACTIVITY`,
+If nothing clinical or work-related is visible (personal browsing, system settings, file explorer, desktop): respond with exactly: NO_CLINICAL_ACTIVITY`,
         },
       ],
     }],

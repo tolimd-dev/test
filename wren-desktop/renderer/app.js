@@ -253,6 +253,27 @@ async function sendMessage() {
   // Show thinking indicator
   const thinkingEl = showThinking();
 
+  // Capture what's on screen RIGHT NOW — this is what "see that?" refers to.
+  // Runs every message regardless of the background capture timer.
+  let currentView = null;
+  if (captureVideo?.videoWidth && captureCtx) {
+    try {
+      captureCtx.drawImage(captureVideo, 0, 0, SEND_W, SEND_H);
+      const base64 = captureCanvas.toDataURL('image/jpeg', 0.75).split(',')[1];
+      const res = await window.wren.analyzeFrame({
+        base64,
+        currentApp:   activityLog[0]?.app   || null,
+        currentTitle: activityLog[0]?.title || null,
+      });
+      if (res?.observation) {
+        currentView = res.observation;
+        screenObservations.unshift({ text: res.observation, ts: Date.now() });
+        if (screenObservations.length > 30) screenObservations.pop();
+        updateVisionLastSeen(res.observation.slice(0, 120));
+      }
+    } catch { /* non-fatal — Lucas still responds without it */ }
+  }
+
   // Build history for OpenAI (last 20 exchanges)
   const history = messageHistory
     .filter(m => m.role === 'user' || m.role === 'assistant')
@@ -263,7 +284,7 @@ async function sendMessage() {
   const res = await window.wren.send({
     message: text,
     history,
-    context: buildContext(),
+    context: buildContext(currentView),
   });
 
   thinkingEl.remove();
@@ -388,7 +409,7 @@ const DIFF_H  = 90;
 const SEND_W  = 1280;  // resolution sent to Vision
 const SEND_H  = 720;
 const DIFF_THRESHOLD    = 0.05;   // 5% pixels changed = meaningful
-const MIN_VISION_GAP_MS = 30000;  // at most one Vision call per 30s (cheap test mode)
+const MIN_VISION_GAP_MS = 10000;  // background capture: at most once per 10s
 
 let captureVideo    = null;
 let captureCanvas   = null;
@@ -599,13 +620,14 @@ function formatTime(ts) {
 
 // ── Context builder (anonymized before sending to OpenAI) ─────────────────
 
-function buildContext() {
+function buildContext(currentView = null) {
   const current = activityLog[0] || null;
   return {
     currentApp:         current?.app   || null,
     currentTitle:       current?.title || null,
     recentActivity:     activityLog.slice(0, 20).map(a => ({ app: a.app, title: a.title })),
     screenObservations: screenObservations.slice(0, 10).map(o => o.text),
+    currentView,
   };
 }
 

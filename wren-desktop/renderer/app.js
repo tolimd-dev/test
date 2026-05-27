@@ -307,7 +307,20 @@ async function sendMessage() {
     wrenColor: res.wrenColor,
   });
 
-  highlightActiveDot(res.wren);
+  // If Lucas delegated to a specialist, show their response as a second bubble
+  if (res.delegate) {
+    await saveAndDisplayMessage({
+      role:      'assistant',
+      content:   res.delegate.reply,
+      wren:      res.delegate.wren,
+      wrenName:  res.delegate.wrenName,
+      wrenColor: res.delegate.wrenColor,
+    });
+    highlightActiveDot(res.delegate.wren);
+  } else {
+    highlightActiveDot(res.wren);
+  }
+
   scrollToBottom();
 }
 

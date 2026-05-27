@@ -45,6 +45,15 @@ Watch the seams. The interesting design problems in DPC live at the edges betwee
 
 In DPC, the relationship is the product. Every tool that makes the doctor feel more like an administrator erodes the value proposition. Ask: does this make the doctor more present with patients, or less?
 
+DELEGATION:
+You have three specialists on your team. Pull them in when you need them by adding a marker at the very end of your response — it's invisible to the doctor.
+
+- [DELEGATE:builder] — when something should actually be built. Only after you've decided it's worth building and said what it should do. Not for "could we automate this?" speculation.
+- [DELEGATE:compliance] — when HIPAA, BAA, or documentation obligations need a real answer. Not for general privacy questions.
+- [DELEGATE:security] — when PHI flow or data exposure needs proper assessment.
+
+Give your design take first. Then delegate if needed. Never delegate without your own response — the specialist adds to your thinking, they don't replace it.
+
 USING SCREEN CONTEXT:
 When your context includes "SCREEN RIGHT NOW" — that's what was on the doctor's screen the instant they sent this message. "See that?" means that. Describe what you see, then respond to it directly. Never ask them to explain something you can already read.
 
@@ -206,25 +215,54 @@ function buildContextBlock(context) {
 // ── Main entry point ───────────────────────────────────────────────────────
 
 async function processMessage({ message, history = [], context = {}, apiKey, model }) {
-  // Route to the right Wren (instant keyword match — no extra API call)
-  const member  = route({ message });
-  const wren    = WRENS[member];
+  // Lucas always responds first — he decides whether to delegate
+  const lucas = WRENS.designer;
+  const lucasPrompt = lucas.system + buildContextBlock(context);
 
-  const systemPrompt = wren.system + buildContextBlock(context);
-
-  // Convert stored history to OpenAI format
   const messages = [
     ...history.map(m => ({ role: m.role, content: m.content })),
     { role: 'user', content: message },
   ];
 
-  const reply = await callOpenAI({ apiKey, model, systemPrompt, messages });
+  const lucasRaw = await callOpenAI({ apiKey, model, systemPrompt: lucasPrompt, messages });
+
+  // Check if Lucas is delegating to a specialist
+  const delegateMatch = lucasRaw.match(/\[DELEGATE:(builder|compliance|security)\]/i);
+  const lucasReply = lucasRaw.replace(/\[DELEGATE:(builder|compliance|security)\]/gi, '').trim();
+
+  if (!delegateMatch) {
+    return {
+      reply:     lucasReply,
+      wren:      'designer',
+      wrenName:  lucas.name,
+      wrenColor: lucas.color,
+    };
+  }
+
+  // Run the specialist — they see the original message and Lucas's framing as context
+  const specialistKey = delegateMatch[1].toLowerCase();
+  const specialist    = WRENS[specialistKey];
+  const specialistPrompt = specialist.system + buildContextBlock(context) +
+    `\n\nLucas's design take (for context): ${lucasReply}`;
+
+  const specialistReply = await callOpenAI({
+    apiKey,
+    model,
+    systemPrompt: specialistPrompt,
+    messages,
+  });
 
   return {
-    reply,
-    wren:  member,
-    wrenName:  wren.name,
-    wrenColor: wren.color,
+    reply:     lucasReply,
+    wren:      'designer',
+    wrenName:  lucas.name,
+    wrenColor: lucas.color,
+    delegate: {
+      reply:     specialistReply,
+      wren:      specialistKey,
+      wrenName:  specialist.name,
+      wrenColor: specialist.color,
+    },
   };
 }
 

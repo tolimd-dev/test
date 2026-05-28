@@ -21,6 +21,7 @@ let currentUser        = null;
 let messageHistory     = [];  // { role, content, wren, wrenName, wrenColor, ts }
 let activityLog        = [];  // recent window events from OS observer
 let screenObservations = [];  // what GPT-4o Vision has seen recently
+let chatViewActive     = true; // whether the chat tab is currently visible
 
 const WREN_COLORS = {
   designer:   '#10b981',
@@ -51,6 +52,8 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
     btn.classList.add('active');
     $(`view-${view}`).classList.remove('hidden');
+    chatViewActive = (view === 'chat');
+    if (chatViewActive) clearUnread();
   });
 });
 
@@ -205,7 +208,7 @@ async function showFirstContact() {
       role:      'assistant',
       content,
       wren:      res.wren      || 'designer',
-      wrenName:  res.wrenName  || 'Designer',
+      wrenName:  res.wrenName  || 'Lucas',
       wrenColor: res.wrenColor || WREN_COLORS.designer,
       proactive: true,
     });
@@ -213,7 +216,7 @@ async function showFirstContact() {
     console.error('[Wren] First contact failed:', err.message);
     await saveAndDisplayMessage({
       role: 'assistant', content: FALLBACK_INTRO,
-      wren: 'designer', wrenName: 'Designer', wrenColor: WREN_COLORS.designer, proactive: true,
+      wren: 'designer', wrenName: 'Lucas', wrenColor: WREN_COLORS.designer, proactive: true,
     });
   }
 }
@@ -355,7 +358,7 @@ function appendMessage(msg) {
   if (msg.role === 'assistant') {
     const badge = document.createElement('div');
     badge.className = 'wren-badge';
-    badge.textContent = msg.wrenName || 'Wren';
+    badge.textContent = msg.wrenName || 'Lucas';
     badge.style.color = msg.wrenColor || '#10b981';
     div.appendChild(badge);
   }
@@ -366,11 +369,32 @@ function appendMessage(msg) {
     bubble.style.borderLeftColor = msg.wrenColor;
   }
 
-  // Render markdown-ish: code blocks, bold
   bubble.innerHTML = renderContent(msg.content || '');
   div.appendChild(bubble);
 
+  // Timestamp
+  const ts = document.createElement('div');
+  ts.className = 'msg-ts';
+  ts.textContent = formatTime(msg.ts || msg.createdAt?.seconds * 1000 || Date.now());
+  div.appendChild(ts);
+
   messagesEl.appendChild(div);
+
+  // Mark unread if this is an incoming assistant message and chat isn't visible
+  if (msg.role === 'assistant' && !chatViewActive) markUnread();
+}
+
+function markUnread() {
+  const btn = document.querySelector('.nav-btn[data-view="chat"]');
+  if (btn && !btn.querySelector('.unread-dot')) {
+    const dot = document.createElement('span');
+    dot.className = 'unread-dot';
+    btn.appendChild(dot);
+  }
+}
+
+function clearUnread() {
+  document.querySelector('.nav-btn[data-view="chat"] .unread-dot')?.remove();
 }
 
 function renderContent(text) {

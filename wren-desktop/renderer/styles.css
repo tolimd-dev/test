@@ -199,6 +199,16 @@ button.danger:hover { background: #991b1b; }
   display: flex; align-items: center; justify-content: center;
   padding: 0;
   transition: background 0.15s, color 0.15s;
+  position: relative;
+}
+
+.unread-dot {
+  position: absolute;
+  top: 5px; right: 5px;
+  width: 7px; height: 7px;
+  background: var(--accent);
+  border-radius: 50%;
+  pointer-events: none;
 }
 .nav-btn:hover { background: var(--surface2); color: var(--text); }
 .nav-btn.active { background: var(--surface2); color: var(--accent); }
@@ -267,6 +277,15 @@ button.danger:hover { background: #991b1b; }
 .msg-user { align-self: flex-end; }
 .msg-assistant { align-self: flex-start; }
 .msg-system { align-self: center; opacity: 0.6; font-size: 12px; }
+
+.msg-ts {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 3px;
+  opacity: 0.6;
+}
+.msg-user .msg-ts  { text-align: right; }
+.msg-assistant .msg-ts { padding-left: 4px; }
 
 .wren-badge {
   font-size: 10px;

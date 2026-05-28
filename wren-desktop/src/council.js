@@ -293,7 +293,7 @@ Rules:
   });
 
   if (!text || text === 'NOTHING_YET') return { observation: null };
-  return { observation: text, wren: 'designer', wrenName: 'Designer', wrenColor: WRENS.designer.color };
+  return { observation: text, wren: 'designer', wrenName: WRENS.designer.name, wrenColor: WRENS.designer.color };
 }
 
 // ── Screen capture analysis (GPT-4o Vision) ───────────────────────────────

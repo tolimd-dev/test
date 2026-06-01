@@ -19,9 +19,26 @@ const db   = firebase.firestore();
 
 let currentUser        = null;
 let messageHistory     = [];  // { role, content, wren, wrenName, wrenColor, ts }
-let activityLog        = [];  // recent window events from OS observer
-let screenObservations = [];  // what GPT-4o Vision has seen recently
-let chatViewActive     = true; // whether the chat tab is currently visible
+let activityLog        = [];  // recent window events from OS observer (persisted locally)
+let screenObservations = [];  // what GPT-4o Vision has seen recently (persisted locally)
+let chatViewActive     = true;
+
+// Debounced save — write to electron-store at most 3s after last change
+let activitySaveTimer = null;
+function scheduleActivitySave() {
+  if (activitySaveTimer) clearTimeout(activitySaveTimer);
+  activitySaveTimer = setTimeout(() => {
+    window.wren.saveActivityLog(activityLog.slice(0, 1000));
+  }, 3000);
+}
+
+let observationSaveTimer = null;
+function scheduleObservationSave() {
+  if (observationSaveTimer) clearTimeout(observationSaveTimer);
+  observationSaveTimer = setTimeout(() => {
+    window.wren.saveObservations(screenObservations.slice(0, 200));
+  }, 3000);
+}
 
 const WREN_COLORS = {
   designer:   '#10b981',
@@ -64,11 +81,21 @@ function showAuth() {
   appEl.classList.add('hidden');
 }
 
-function showApp(user) {
+async function showApp(user) {
   currentUser = user;
   authScreen.classList.add('hidden');
   appEl.classList.remove('hidden');
   $('settings-user').textContent = user.email;
+
+  // Restore persisted activity log and screen observations
+  const [savedActivity, savedObs] = await Promise.all([
+    window.wren.loadActivityLog(),
+    window.wren.loadObservations(),
+  ]);
+  activityLog        = savedActivity  || [];
+  screenObservations = savedObs       || [];
+  renderActivityList();
+
   loadConversation();
   scheduleProactiveCheck();
   window.wren.getScreenCaptureEnabled().then(on => { if (on !== false) startScreenCapture(); });
@@ -578,8 +605,9 @@ async function sampleFrame() {
     });
     if (res?.observation) {
       screenObservations.unshift({ text: res.observation, ts: Date.now() });
-      if (screenObservations.length > 30) screenObservations.pop();
+      if (screenObservations.length > 200) screenObservations.pop();
       updateVisionLastSeen(res.observation.slice(0, 120));
+      scheduleObservationSave();
     }
   } catch (err) {
     console.error('[Wren Vision] analyzeFrame error:', err.message);
@@ -614,10 +642,11 @@ window.wren.onResume(async () => {
 
 // ── Activity logging ───────────────────────────────────────────────────────
 
-window.wren.onActivity(async (info) => {
+window.wren.onActivity((info) => {
   activityLog.unshift(info);
-  if (activityLog.length > 100) activityLog.pop();
+  if (activityLog.length > 1000) activityLog.pop();
   renderActivityList();
+  scheduleActivitySave();
 });
 
 // logActivity was removed — activity log is ephemeral in-memory only.
@@ -661,8 +690,8 @@ function buildContext(currentView = null) {
   return {
     currentApp:         current?.app   || null,
     currentTitle:       current?.title || null,
-    recentActivity:     activityLog.slice(0, 20).map(a => ({ app: a.app, title: a.title })),
-    screenObservations: screenObservations.slice(0, 10).map(o => o.text),
+    recentActivity:     activityLog.slice(0, 50).map(a => ({ app: a.app, title: a.title, ts: a.ts })),
+    screenObservations: screenObservations.slice(0, 20).map(o => ({ text: o.text, ts: o.ts })),
     currentView,
   };
 }

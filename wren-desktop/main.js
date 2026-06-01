@@ -134,6 +134,13 @@ ipcMain.handle('store:get',    (_, key)      => store.get(key));
 ipcMain.handle('store:set',    (_, key, val) => store.set(key, val));
 ipcMain.handle('store:delete', (_, key)      => store.delete(key));
 
+// Activity log — stored locally in electron-store, not Firestore.
+// No quota concerns; survives restarts so Lucas can reference weekly patterns.
+ipcMain.handle('activity:load', ()        => store.get('activityLog', []));
+ipcMain.handle('activity:save', (_, log)  => store.set('activityLog', log));
+ipcMain.handle('observations:load', ()       => store.get('screenObservations', []));
+ipcMain.handle('observations:save', (_, obs) => store.set('screenObservations', obs));
+
 ipcMain.on('window:hide',     () => mainWindow?.hide());
 ipcMain.on('window:minimize', () => mainWindow?.minimize());
 

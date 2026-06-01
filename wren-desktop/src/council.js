@@ -202,12 +202,18 @@ function buildContextBlock(context) {
 
   if (context.screenObservations?.length) {
     lines.push(`Recent screen observations (most recent first):`);
-    context.screenObservations.slice(0, 8).forEach(o => lines.push(`  • ${o}`));
+    context.screenObservations.slice(0, 10).forEach(o => {
+      const when = o.ts ? new Date(o.ts).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+      lines.push(`  • ${when ? `[${when}] ` : ''}${o.text || o}`);
+    });
   }
 
   if (context.recentActivity?.length) {
-    const apps = [...new Set(context.recentActivity.slice(0, 20).map(a => a.app))].join(', ');
-    lines.push(`Apps used this session: ${apps}`);
+    lines.push(`Recent app activity (most recent first):`);
+    context.recentActivity.slice(0, 30).forEach(a => {
+      const when = a.ts ? new Date(a.ts).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+      lines.push(`  • ${when ? `[${when}] ` : ''}${a.app}${a.title ? ` — ${a.title.slice(0, 60)}` : ''}`);
+    });
   }
 
   return lines.length

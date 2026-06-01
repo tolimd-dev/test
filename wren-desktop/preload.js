@@ -25,6 +25,12 @@ contextBridge.exposeInMainWorld('wren', {
   // Activity stream from OS-level window observer
   onActivity: (cb) => ipcRenderer.on('activity:update', (_, info) => cb(info)),
 
+  // Activity log — persisted locally via electron-store
+  loadActivityLog:     ()        => ipcRenderer.invoke('activity:load'),
+  saveActivityLog:     (log)     => ipcRenderer.invoke('activity:save', log),
+  loadObservations:    ()        => ipcRenderer.invoke('observations:load'),
+  saveObservations:    (obs)     => ipcRenderer.invoke('observations:save', obs),
+
   // Pause / resume (triggered from tray menu)
   onPause:  (cb) => ipcRenderer.on('wren:pause',  () => cb()),
   onResume: (cb) => ipcRenderer.on('wren:resume', () => cb()),

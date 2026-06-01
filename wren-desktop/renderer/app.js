@@ -249,10 +249,10 @@ async function sendMessage() {
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
     messageHistory.push({ id: ref.id, ...userMsg });
-  } catch { /* non-critical */ }
-
-  // Log activity
-  await logActivity({ type: 'wren_message', content: text });
+  } catch (err) {
+    console.error('[Wren] Firestore write failed:', err.message);
+    showSystemMessage('⚠ Message not saved — check your Firebase connection.');
+  }
 
   // Show thinking indicator
   const thinkingEl = showThinking();
@@ -342,7 +342,11 @@ async function saveAndDisplayMessage(msg) {
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       });
     id = ref.id;
-  } catch { /* Firestore write failed — still show message locally */ }
+  } catch (err) {
+    console.error('[Wren] Firestore save failed:', err.message);
+    // Still show the message locally — but warn so the user knows it won't persist
+    showSystemMessage('⚠ Could not save to Firestore — message visible now but won\'t reload after restart. Check Firebase rules or quota.');
+  }
   const full = { id, ...msg };
   messageHistory.push(full);
   appendMessage(full);
@@ -576,9 +580,6 @@ async function sampleFrame() {
       screenObservations.unshift({ text: res.observation, ts: Date.now() });
       if (screenObservations.length > 30) screenObservations.pop();
       updateVisionLastSeen(res.observation.slice(0, 120));
-      if (currentUser) {
-        await logActivity({ type: 'screen_observation', observation: res.observation });
-      }
     }
   } catch (err) {
     console.error('[Wren Vision] analyzeFrame error:', err.message);
@@ -616,26 +617,13 @@ window.wren.onResume(async () => {
 window.wren.onActivity(async (info) => {
   activityLog.unshift(info);
   if (activityLog.length > 100) activityLog.pop();
-
-  // Render in activity view
   renderActivityList();
-
-  // Log to Firestore
-  if (currentUser) {
-    await logActivity({ type: 'window_focus', ...info });
-  }
 });
 
-async function logActivity(entry) {
-  if (!currentUser) return;
-  try {
-    await db.collection('activityLog').add({
-      ...entry,
-      userId:    currentUser.uid,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    });
-  } catch { /* non-critical */ }
-}
+// logActivity was removed — activity log is ephemeral in-memory only.
+// Writing every window focus + screen observation to Firestore was
+// consuming ~5-7k writes/day and silently exhausting the free tier quota,
+// which caused conversation messages to stop saving too.
 
 function renderActivityList() {
   const el = $('activity-list');

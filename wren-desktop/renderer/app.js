@@ -171,7 +171,7 @@ async function loadConversation() {
       .doc(currentUser.uid)
       .collection('messages')
       .orderBy('createdAt', 'asc')
-      .limit(100)
+      .limit(400)
       .get();
 
     messageHistory = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -237,6 +237,7 @@ async function sendMessage() {
     wren:      null,
     wrenName:  null,
     wrenColor: null,
+    ts:        Date.now(),
   };
   appendMessage(userMsg);
   scrollToBottom();
@@ -277,10 +278,10 @@ async function sendMessage() {
     } catch { /* non-fatal — Lucas still responds without it */ }
   }
 
-  // Build history for OpenAI (last 20 exchanges)
+  // Full conversation history — GPT-4o has a 128k context window so we send
+  // everything we have. Lucas needs to remember what was built and decided.
   const history = messageHistory
     .filter(m => m.role === 'user' || m.role === 'assistant')
-    .slice(-40)
     .map(m => ({ role: m.role, content: m.content }));
 
   // Call council via main process
@@ -372,11 +373,12 @@ function appendMessage(msg) {
   bubble.innerHTML = renderContent(msg.content || '');
   div.appendChild(bubble);
 
-  // Timestamp
-  const ts = document.createElement('div');
-  ts.className = 'msg-ts';
-  ts.textContent = formatTime(msg.ts || msg.createdAt?.seconds * 1000 || Date.now());
-  div.appendChild(ts);
+  // Timestamp — prefer the stored ts, fall back to Firestore server timestamp
+  const msgTs = msg.ts || (msg.createdAt?.seconds ? msg.createdAt.seconds * 1000 : null) || Date.now();
+  const tsEl = document.createElement('div');
+  tsEl.className = 'msg-ts';
+  tsEl.textContent = formatTime(msgTs);
+  div.appendChild(tsEl);
 
   messagesEl.appendChild(div);
 
@@ -652,7 +654,16 @@ function escHtml(s) {
 
 function formatTime(ts) {
   if (!ts) return '';
-  return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const date    = new Date(ts);
+  const now     = new Date();
+  const today   = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterd = new Date(+today - 86400000);
+  const msgDay  = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const time    = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  if (+msgDay === +today)   return time;
+  if (+msgDay === +yesterd) return `Yesterday · ${time}`;
+  return date.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ` · ${time}`;
 }
 
 // ── Context builder (anonymized before sending to OpenAI) ─────────────────

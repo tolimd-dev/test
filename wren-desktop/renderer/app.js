@@ -712,17 +712,23 @@ async function runProactiveCheck() {
   const res = await window.wren.proactive({ context: buildContext() });
   if (!res.observation) return;
 
+  const wrenName  = res.wrenName  || 'Lucas';
+  const wrenColor = res.wrenColor || WREN_COLORS.designer;
+
   await saveAndDisplayMessage({
     role:      'assistant',
     content:   res.observation,
-    wren:      res.wren      || 'designer',
-    wrenName:  res.wrenName  || 'Designer',
-    wrenColor: res.wrenColor || WREN_COLORS.designer,
+    wren:      res.wren || 'designer',
+    wrenName,
+    wrenColor,
     proactive: true,
+    ts:        Date.now(),
   });
 
   scrollToBottom();
-  window.wren.badge('!');
+
+  // Toast so the observation surfaces even when Wren isn't open
+  window.wren.showToast({ message: res.observation, wrenName, wrenColor });
 }
 
 // ── Settings ───────────────────────────────────────────────────────────────

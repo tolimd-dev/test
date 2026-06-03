@@ -31,6 +31,9 @@ contextBridge.exposeInMainWorld('wren', {
   loadObservations:    ()        => ipcRenderer.invoke('observations:load'),
   saveObservations:    (obs)     => ipcRenderer.invoke('observations:save', obs),
 
+  // Toast popup
+  showToast: (payload) => ipcRenderer.invoke('toast:show', payload),
+
   // Pause / resume (triggered from tray menu)
   onPause:  (cb) => ipcRenderer.on('wren:pause',  () => cb()),
   onResume: (cb) => ipcRenderer.on('wren:resume', () => cb()),

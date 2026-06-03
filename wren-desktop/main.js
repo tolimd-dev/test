@@ -8,6 +8,7 @@ const council = require('./src/council');
 const store = new Store({ name: 'wren-config' });
 
 let mainWindow     = null;
+let toastWindow    = null;
 let tray           = null;
 let isQuitting     = false;
 let isPaused       = false;
@@ -85,6 +86,49 @@ function createWindow() {
     if (!isQuitting) { e.preventDefault(); mainWindow.hide(); }
   });
 }
+
+// ── Toast popup ────────────────────────────────────────────────────────────
+
+function showToast({ message, wrenName, wrenColor }) {
+  if (toastWindow && !toastWindow.isDestroyed()) toastWindow.destroy();
+
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+
+  toastWindow = new BrowserWindow({
+    width:       340,
+    height:      120,
+    x:           width  - 356,
+    y:           height - 136,
+    frame:       false,
+    resizable:   false,
+    movable:     false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    transparent: true,
+    webPreferences: {
+      preload:          path.join(__dirname, 'toast-preload.js'),
+      contextIsolation: true,
+      nodeIntegration:  false,
+      sandbox:          false,
+    },
+  });
+
+  toastWindow.loadFile(path.join(__dirname, 'renderer', 'toast.html'));
+  toastWindow.once('ready-to-show', () => {
+    toastWindow.showInactive(); // show without stealing focus
+    toastWindow.webContents.send('toast:data', { message, wrenName, wrenColor });
+  });
+  toastWindow.on('closed', () => { toastWindow = null; });
+}
+
+ipcMain.on('toast:dismiss', () => { toastWindow?.destroy(); toastWindow = null; });
+ipcMain.on('toast:open',    () => {
+  mainWindow?.show();
+  mainWindow?.focus();
+  toastWindow?.destroy();
+  toastWindow = null;
+});
+ipcMain.handle('toast:show', (_, payload) => showToast(payload));
 
 // ── Pause / resume ─────────────────────────────────────────────────────────
 

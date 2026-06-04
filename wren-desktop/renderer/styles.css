@@ -239,7 +239,36 @@ button.danger:hover { background: #991b1b; }
   letter-spacing: 0.06em;
 }
 
+#council-bar-right { display: flex; align-items: center; gap: 8px; }
 #council-dots { display: flex; gap: 6px; }
+
+#btn-deep-watch {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--surface2);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: background 0.15s, color 0.15s;
+}
+#btn-deep-watch:hover { background: var(--surface); color: var(--text); }
+
+#btn-deep-watch.active {
+  background: #064e3b;
+  color: #10b981;
+  border-color: #10b981;
+  animation: deep-watch-pulse 2s ease-in-out infinite;
+}
+
+@keyframes deep-watch-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+  50%       { box-shadow: 0 0 0 3px rgba(16,185,129,0.25); }
+}
 
 .dot {
   width: 22px; height: 22px;

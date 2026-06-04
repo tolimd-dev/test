@@ -502,8 +502,10 @@ const DIFF_W  = 160;   // small canvas for fast pixel diffing
 const DIFF_H  = 90;
 const SEND_W  = 1280;  // resolution sent to Vision
 const SEND_H  = 720;
-const DIFF_THRESHOLD    = 0.05;   // 5% pixels changed = meaningful
-const MIN_VISION_GAP_MS = 10000;  // background capture: at most once per 10s
+const DIFF_THRESHOLD       = 0.05;   // 5% pixels changed = meaningful
+const VISION_GAP_NORMAL_MS = 10000;  // background capture: at most once per 10s
+const VISION_GAP_DEEP_MS   = 3000;   // deep watch: every 3s
+let   currentVisionGapMs   = VISION_GAP_NORMAL_MS;
 
 let captureVideo    = null;
 let captureCanvas   = null;
@@ -612,7 +614,7 @@ async function sampleFrame() {
 
   if (!changed)      return;  // screen is static
   if (visionBusy)    return;  // previous Vision call still in flight
-  if (Date.now() - lastVisionTs < MIN_VISION_GAP_MS) return;  // rate limit
+  if (Date.now() - lastVisionTs < currentVisionGapMs) return;  // rate limit
 
   // Draw full-res frame for Vision
   captureCtx.drawImage(captureVideo, 0, 0, SEND_W, SEND_H);
@@ -724,10 +726,9 @@ function buildContext(currentView = null) {
 
 let proactiveTimer = null;
 
-function scheduleProactiveCheck() {
+function scheduleProactiveCheck(intervalMs = 30 * 60 * 1000) {
   if (proactiveTimer) clearInterval(proactiveTimer);
-  // Check every 30 minutes
-  proactiveTimer = setInterval(runProactiveCheck, 30 * 60 * 1000);
+  proactiveTimer = setInterval(runProactiveCheck, intervalMs);
 }
 
 async function runProactiveCheck() {
@@ -754,6 +755,52 @@ async function runProactiveCheck() {
   // Toast so the observation surfaces even when Wren isn't open
   window.wren.showToast({ message: res.observation, wrenName, wrenColor });
 }
+
+// ── Deep Watch mode ────────────────────────────────────────────────────────
+
+let deepWatchMode    = false;
+let deepWatchStartTs = null;
+
+function startDeepWatch() {
+  deepWatchMode    = true;
+  deepWatchStartTs = Date.now();
+  currentVisionGapMs = VISION_GAP_DEEP_MS;
+  scheduleProactiveCheck(5 * 60 * 1000);
+
+  const btn = $('btn-deep-watch');
+  btn.textContent = 'End Watch';
+  btn.classList.add('active');
+  btn.title = 'End deep watch session and get Lucas\'s debrief';
+
+  showSystemMessage('Deep Watch on — Lucas is observing closely. Click "End Watch" when you\'re done and he\'ll debrief you.');
+}
+
+async function endDeepWatch() {
+  deepWatchMode = false;
+  currentVisionGapMs = VISION_GAP_NORMAL_MS;
+  scheduleProactiveCheck();
+
+  const btn = $('btn-deep-watch');
+  btn.textContent = 'Watch';
+  btn.classList.remove('active');
+  btn.title = 'Deep Watch — Lucas observes your screen intensively';
+
+  const elapsed = deepWatchStartTs
+    ? Math.round((Date.now() - deepWatchStartTs) / 60000)
+    : null;
+  const durationNote = elapsed ? ` (${elapsed} min session)` : '';
+
+  // Inject a system-framed debrief request into the chat
+  const debriefPrompt = `Deep Watch session just ended${durationNote}. Based on everything you observed — the sequence of apps I moved through, what was open on my screen, what I was doing — synthesize my post-visit workflow. What was the sequence? Where did you see friction or switching cost? What patterns stood out? Be specific about what you actually saw, not general advice.`;
+
+  msgInput.value = debriefPrompt;
+  await sendMessage();
+}
+
+$('btn-deep-watch').addEventListener('click', () => {
+  if (deepWatchMode) endDeepWatch();
+  else startDeepWatch();
+});
 
 // ── Settings ───────────────────────────────────────────────────────────────
 

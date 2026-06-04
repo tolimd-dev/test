@@ -13,7 +13,7 @@
     "productName": "Wren",
     "directories": { "output": "dist" },
     "win": {
-      "target": "nsis",
+      "target": "portable",
       "icon": "assets/icon.png"
     },
     "mac": {

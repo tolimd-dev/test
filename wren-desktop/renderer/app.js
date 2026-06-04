@@ -99,6 +99,7 @@ async function showApp(user) {
   loadConversation();
   scheduleProactiveCheck();
   window.wren.getScreenCaptureEnabled().then(on => { if (on !== false) startScreenCapture(); });
+  showStartupGreeting();
 }
 
 function showAuthError(msg) {
@@ -211,6 +212,29 @@ async function loadConversation() {
     showSystemMessage('Could not load conversation history — check Firebase rules.');
     showFirstContact();
   }
+}
+
+// ── Startup greeting ───────────────────────────────────────────────────────
+
+async function showStartupGreeting() {
+  const today = new Date().toDateString();
+  const lastGreeting = await window.wren.store.get('lastGreetingDate');
+  if (lastGreeting === today) return; // already greeted today
+  await window.wren.store.set('lastGreetingDate', today);
+
+  const hour = new Date().getHours();
+  const time = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
+
+  const msg = `Good ${time}. Wren is on and watching — Vision and active window monitoring are both running. If you're doing anything personal today, right-click the tray icon and hit "Pause Wren" first.`;
+
+  await saveAndDisplayMessage({
+    role: 'assistant', content: msg,
+    wren: 'designer', wrenName: 'Lucas', wrenColor: WREN_COLORS.designer,
+    proactive: true, ts: Date.now(),
+  });
+  scrollToBottom();
+
+  window.wren.showToast({ message: msg, wrenName: 'Lucas', wrenColor: WREN_COLORS.designer });
 }
 
 // ── First contact ──────────────────────────────────────────────────────────

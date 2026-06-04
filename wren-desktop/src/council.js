@@ -63,6 +63,16 @@ You have three specialists on your team. Pull them in when you need them by addi
 
 Give your design take first. Then delegate if needed. Never delegate without your own response — the specialist adds to your thinking, they don't replace it.
 
+REMEMBERING PREFERENCES:
+When the doctor gives feedback about how you should behave — tone, length, style, what to skip, what to stop doing — capture it as [REMEMBER: <concise preference statement>] at the very end of your response, after any DELEGATE marker. This gets saved permanently to your instructions and will apply in every future conversation.
+
+Use it only for genuine behavioral preferences, not one-time requests. Rephrase it as a clear instruction to yourself. Examples:
+- Doctor says "be less verbose" → [REMEMBER: Keep responses to 2-3 sentences unless the question requires more]
+- Doctor says "stop asking follow-up questions" → [REMEMBER: Don't ask follow-up questions unless the doctor explicitly invites them]
+- Doctor says "skip the HMW framing" → [REMEMBER: Don't use HMW framing — go straight to the observation or recommendation]
+
+When you add a [REMEMBER:...], briefly acknowledge it in your response so the doctor knows it stuck.
+
 USING SCREEN CONTEXT:
 When your context includes "SCREEN RIGHT NOW" — that's what was on the doctor's screen the instant they sent this message. "See that?" means that. Describe what you see, then respond to it directly. Never ask them to explain something you can already read.
 
@@ -231,10 +241,15 @@ function buildContextBlock(context) {
 
 // ── Main entry point ───────────────────────────────────────────────────────
 
-async function processMessage({ message, history = [], context = {}, apiKey, model }) {
+async function processMessage({ message, history = [], context = {}, apiKey, model, preferences = [] }) {
   // Lucas always responds first — he decides whether to delegate
   const lucas = WRENS.designer;
-  const lucasPrompt = lucas.system + buildContextBlock(context);
+
+  const prefsBlock = preferences.length
+    ? `\n\nDOCTOR'S PREFERENCES — apply these in every response:\n${preferences.map(p => `- ${p}`).join('\n')}`
+    : '';
+
+  const lucasPrompt = lucas.system + prefsBlock + buildContextBlock(context);
 
   const messages = [
     ...history.map(m => ({ role: m.role, content: m.content })),
@@ -243,9 +258,16 @@ async function processMessage({ message, history = [], context = {}, apiKey, mod
 
   const lucasRaw = await callOpenAI({ apiKey, model, systemPrompt: lucasPrompt, messages });
 
+  // Parse any preference captures before stripping markers
+  const rememberMatches = [...lucasRaw.matchAll(/\[REMEMBER:\s*([^\]]+)\]/gi)];
+  const remembered = rememberMatches.map(m => m[1].trim());
+
   // Check if Lucas is delegating to a specialist
   const delegateMatch = lucasRaw.match(/\[DELEGATE:(builder|compliance|security)\]/i);
-  const lucasReply = lucasRaw.replace(/\[DELEGATE:(builder|compliance|security)\]/gi, '').trim();
+  const lucasReply = lucasRaw
+    .replace(/\[DELEGATE:(builder|compliance|security)\]/gi, '')
+    .replace(/\[REMEMBER:[^\]]+\]/gi, '')
+    .trim();
 
   if (!delegateMatch) {
     return {
@@ -253,6 +275,7 @@ async function processMessage({ message, history = [], context = {}, apiKey, mod
       wren:      'designer',
       wrenName:  lucas.name,
       wrenColor: lucas.color,
+      remembered,
     };
   }
 
@@ -274,6 +297,7 @@ async function processMessage({ message, history = [], context = {}, apiKey, mod
     wren:      'designer',
     wrenName:  lucas.name,
     wrenColor: lucas.color,
+    remembered,
     delegate: {
       reply:     specialistReply,
       wren:      specialistKey,

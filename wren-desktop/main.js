@@ -197,8 +197,13 @@ ipcMain.handle('wren:send', async (_, { message, history, context }) => {
   const apiKey = store.get('openaiApiKey');
   if (!apiKey) return { error: 'no_key' };
   const model = store.get('openaiModel') || 'gpt-4o';
+  const preferences = store.get('lucasPreferences', []);
   try {
-    return await council.processMessage({ message, history, context, apiKey, model });
+    const result = await council.processMessage({ message, history, context, apiKey, model, preferences });
+    if (result.remembered?.length) {
+      store.set('lucasPreferences', [...preferences, ...result.remembered]);
+    }
+    return result;
   } catch (err) {
     return { error: err.message };
   }

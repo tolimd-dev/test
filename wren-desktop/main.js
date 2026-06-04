@@ -163,7 +163,7 @@ function updateTrayMenu() {
 }
 
 function createTray() {
-  const iconPath = path.join(__dirname, '..', 'dpc-workflow-observer', 'icons', 'icon16.png');
+  const iconPath = path.join(__dirname, 'assets', 'icon.png');
   tray = new Tray(iconPath);
   tray.setToolTip('Wren');
   updateTrayMenu();

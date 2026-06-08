@@ -329,11 +329,20 @@ async function sendMessage() {
     } catch { /* non-fatal — Lucas still responds without it */ }
   }
 
-  // Full conversation history — GPT-4o has a 128k context window so we send
-  // everything we have. Lucas needs to remember what was built and decided.
-  const history = messageHistory
+  // Conversation history — trimmed to fit the org's tokens-per-minute limit.
+  // GPT-4o's context window is 128k, but OpenAI rate-limits requests per
+  // minute at the org level (often far lower), so we cap by character count
+  // (~4 chars/token) and drop the oldest messages first.
+  const MAX_HISTORY_CHARS = 80000; // ~20k tokens — leaves room for system prompt + context block
+  let history = messageHistory
     .filter(m => m.role === 'user' || m.role === 'assistant')
     .map(m => ({ role: m.role, content: m.content }));
+
+  let historyChars = history.reduce((sum, m) => sum + m.content.length, 0);
+  while (historyChars > MAX_HISTORY_CHARS && history.length > 1) {
+    historyChars -= history[0].content.length;
+    history = history.slice(1);
+  }
 
   // Call council via main process
   const res = await window.wren.send({
@@ -350,7 +359,11 @@ async function sendMessage() {
   }
 
   if (res.error) {
-    showSystemMessage(`Error: ${res.error}`);
+    if (/rate limit|too large|tokens per min/i.test(res.error)) {
+      showSystemMessage('Wren hit OpenAI\'s rate limit for this minute — the conversation got large. Wait about a minute and try again; Wren now trims older history automatically to avoid this.');
+    } else {
+      showSystemMessage(`Error: ${res.error}`);
+    }
     return;
   }
 

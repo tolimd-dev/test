@@ -209,6 +209,12 @@ function buildContextBlock(context) {
 
   const lines = [];
 
+  // Older conversation history that's been folded into a running summary —
+  // keeps Lucas aware of it without resending the full transcript every time.
+  if (context.conversationSummary) {
+    lines.push(`EARLIER IN YOUR HISTORY WITH THIS DOCTOR (older messages condensed to manage context size — treat as real history, not a guess):\n${context.conversationSummary}`);
+  }
+
   // This was captured the instant the doctor sent their message — treat it as ground truth.
   if (context.currentView) {
     lines.push(`SCREEN RIGHT NOW (captured this moment): ${context.currentView}`);
@@ -377,4 +383,31 @@ If nothing clinical or work-related is visible (personal browsing, system settin
   return text;
 }
 
-module.exports = { processMessage, designerProactive, analyzeScreen, WRENS };
+// ── Rolling conversation summary ───────────────────────────────────────────
+// Folds older messages into a running summary so nothing is lost when the
+// raw transcript gets trimmed to fit the org's rate limits.
+
+async function summarizeConversation({ existingSummary = '', messages = [], apiKey, model = 'gpt-4o-mini' }) {
+  const client = new OpenAI({ apiKey });
+
+  const transcript = messages
+    .map(m => `${m.role === 'user' ? 'Doctor' : 'Lucas'}: ${m.content}`)
+    .join('\n\n');
+
+  const prompt = existingSummary
+    ? `Existing summary of earlier conversation between this doctor and Lucas (a design strategist):\n${existingSummary}\n\n` +
+      `New messages to fold into that summary:\n${transcript}\n\n` +
+      `Write an updated summary that integrates the new messages into the existing one — don't just append. Keep it to a few short paragraphs. Preserve: decisions made, things built or planned (name them), recurring patterns or themes discussed, and anything Lucas would need to avoid repeating himself or losing track of context.`
+    : `Summarize this conversation segment between a doctor and Lucas (a design strategist), in a few short paragraphs. Preserve: decisions made, things built or planned (name them), recurring patterns or themes discussed, and anything that matters for future conversations.\n\n${transcript}`;
+
+  const res = await client.chat.completions.create({
+    model,
+    max_tokens: 600,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  const text = res.choices?.[0]?.message?.content?.trim();
+  return text || existingSummary;
+}
+
+module.exports = { processMessage, designerProactive, analyzeScreen, summarizeConversation, WRENS };

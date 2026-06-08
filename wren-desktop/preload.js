@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('wren', {
   send:         (payload) => ipcRenderer.invoke('wren:send',         payload),
   proactive:    (payload) => ipcRenderer.invoke('wren:proactive',    payload),
   analyzeFrame: (payload) => ipcRenderer.invoke('wren:analyze-frame', payload),
+  summarize:    (payload) => ipcRenderer.invoke('wren:summarize',    payload),
 
   // Screen source ID — renderer needs this to start getUserMedia
   getSources: () => ipcRenderer.invoke('desktop-capturer:get-sources'),

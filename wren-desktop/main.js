@@ -235,6 +235,19 @@ ipcMain.handle('wren:proactive', async (_, { context }) => {
   }
 });
 
+// Fold older messages into a running summary — keeps long-term memory without
+// resending the full transcript (and tripping the org's tokens-per-minute limit).
+ipcMain.handle('wren:summarize', async (_, { existingSummary, messages }) => {
+  const apiKey = store.get('openaiApiKey');
+  if (!apiKey) return { summary: existingSummary || '' };
+  try {
+    const summary = await council.summarizeConversation({ existingSummary, messages, apiKey });
+    return { summary };
+  } catch (err) {
+    return { summary: existingSummary || '', error: err.message };
+  }
+});
+
 // ── App lifecycle ──────────────────────────────────────────────────────────
 
 app.whenReady().then(() => {

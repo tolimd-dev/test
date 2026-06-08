@@ -23,6 +23,12 @@ let activityLog        = [];  // recent window events from OS observer (persiste
 let screenObservations = [];  // what GPT-4o Vision has seen recently (persisted locally)
 let chatViewActive     = true;
 
+// Rolling conversation summary — older messages get folded in here so
+// nothing is lost when the raw transcript is trimmed for rate limits.
+let conversationSummary = '';
+let summarizedThroughTs = 0;
+let summarizing         = false;
+
 // Debounced save — write to electron-store at most 3s after last change
 let activitySaveTimer = null;
 function scheduleActivitySave() {
@@ -87,13 +93,17 @@ async function showApp(user) {
   appEl.classList.remove('hidden');
   $('settings-user').textContent = user.email;
 
-  // Restore persisted activity log and screen observations
-  const [savedActivity, savedObs] = await Promise.all([
+  // Restore persisted activity log, screen observations, and rolling summary
+  const [savedActivity, savedObs, savedSummary, savedThroughTs] = await Promise.all([
     window.wren.loadActivityLog(),
     window.wren.loadObservations(),
+    window.wren.store.get('conversationSummary'),
+    window.wren.store.get('summarizedThroughTs'),
   ]);
-  activityLog        = savedActivity  || [];
-  screenObservations = savedObs       || [];
+  activityLog         = savedActivity  || [];
+  screenObservations  = savedObs       || [];
+  conversationSummary = savedSummary   || '';
+  summarizedThroughTs = savedThroughTs || 0;
   renderActivityList();
 
   loadConversation();
@@ -202,7 +212,14 @@ async function loadConversation() {
       .limit(400)
       .get();
 
-    messageHistory = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // Normalize ts — many historical assistant messages were saved without an
+    // explicit ts; fall back to Firestore's createdAt so the rolling-summary
+    // filter (which keys off ts) doesn't silently drop them from history.
+    messageHistory = snap.docs.map(d => {
+      const data = d.data();
+      const ts = data.ts || (data.createdAt?.toMillis ? data.createdAt.toMillis() : 0);
+      return { id: d.id, ...data, ts };
+    });
     messageHistory.forEach(appendMessage);
     scrollToBottom();
 
@@ -329,13 +346,14 @@ async function sendMessage() {
     } catch { /* non-fatal — Lucas still responds without it */ }
   }
 
-  // Conversation history — trimmed to fit the org's tokens-per-minute limit.
-  // GPT-4o's context window is 128k, but OpenAI rate-limits requests per
-  // minute at the org level (often far lower), so we cap by character count
-  // (~4 chars/token) and drop the oldest messages first.
+  // Conversation history — older messages already folded into conversationSummary
+  // are excluded (Lucas sees them via the summary instead), and what's left is
+  // capped by character count (~4 chars/token) to stay under the org's
+  // tokens-per-minute limit. GPT-4o's 128k context window isn't the constraint
+  // here — the per-minute rate limit is.
   const MAX_HISTORY_CHARS = 80000; // ~20k tokens — leaves room for system prompt + context block
   let history = messageHistory
-    .filter(m => m.role === 'user' || m.role === 'assistant')
+    .filter(m => (m.role === 'user' || m.role === 'assistant') && (m.ts || 0) > summarizedThroughTs)
     .map(m => ({ role: m.role, content: m.content }));
 
   let historyChars = history.reduce((sum, m) => sum + m.content.length, 0);
@@ -390,12 +408,16 @@ async function sendMessage() {
   }
 
   scrollToBottom();
+
+  // Background fold-in — doesn't block the UI, keeps history bounded over time
+  maybeSummarizeHistory();
 }
 
 // ── Save message to Firestore + display ────────────────────────────────────
 
 async function saveAndDisplayMessage(msg) {
   let id = `local-${Date.now()}`;
+  if (!msg.ts) msg = { ...msg, ts: Date.now() };
   try {
     const ref = await db
       .collection('conversations')
@@ -731,8 +753,49 @@ function buildContext(currentView = null) {
     currentTitle:       current?.title || null,
     recentActivity:     activityLog.slice(0, 50).map(a => ({ app: a.app, title: a.title, ts: a.ts })),
     screenObservations: screenObservations.slice(0, 20).map(o => ({ text: o.text, ts: o.ts })),
+    conversationSummary: conversationSummary || null,
     currentView,
   };
+}
+
+// ── Rolling summary — fold older messages in once the unsummarized portion
+// gets large, so history is condensed rather than dropped. Runs in the
+// background; doesn't block sending the current message.
+
+const SUMMARY_TRIGGER_CHARS = 60000; // ~15k tokens of unsummarized history triggers a fold-in
+const KEEP_RAW_MESSAGES     = 12;    // always leave this many recent messages in full
+
+async function maybeSummarizeHistory() {
+  if (summarizing) return;
+
+  const unsummarized = messageHistory.filter(m =>
+    (m.role === 'user' || m.role === 'assistant') && (m.ts || 0) > summarizedThroughTs
+  );
+  if (unsummarized.length <= KEEP_RAW_MESSAGES) return;
+
+  const totalChars = unsummarized.reduce((sum, m) => sum + m.content.length, 0);
+  if (totalChars < SUMMARY_TRIGGER_CHARS) return;
+
+  const toFold = unsummarized.slice(0, unsummarized.length - KEEP_RAW_MESSAGES);
+  if (!toFold.length) return;
+
+  summarizing = true;
+  try {
+    const { summary } = await window.wren.summarize({
+      existingSummary: conversationSummary,
+      messages: toFold.map(m => ({ role: m.role, content: m.content })),
+    });
+    if (summary) {
+      conversationSummary = summary;
+      summarizedThroughTs = toFold[toFold.length - 1].ts || summarizedThroughTs;
+      window.wren.store.set('conversationSummary', conversationSummary);
+      window.wren.store.set('summarizedThroughTs', summarizedThroughTs);
+    }
+  } catch (err) {
+    console.error('[Wren] Summarization failed:', err.message);
+  } finally {
+    summarizing = false;
+  }
 }
 
 // ── Proactive Designer check ───────────────────────────────────────────────
